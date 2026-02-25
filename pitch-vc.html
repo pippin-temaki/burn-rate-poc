@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  width: 1200px; height: 800px; 
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: white;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title bar */
+.title-bar {
+  padding: 12px 20px;
+  background: rgba(0,0,0,0.6);
+  border-bottom: 2px solid #ffaa00;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.title { font-size: 20px; font-weight: bold; color: #ffaa00; }
+.stage { font-size: 13px; color: #888; }
+
+.main { display: flex; flex: 1; padding: 20px; gap: 20px; }
+
+/* Left - The Pitch Deck / Presentation */
+.pitch-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Slide preview */
+.slide {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  color: #333;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.slide-header {
+  font-size: 11px; color: #999;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.slide-title {
+  font-size: 28px; font-weight: bold; color: #1a1a3e;
+  margin-bottom: 16px;
+}
+.slide-subtitle { font-size: 14px; color: #666; margin-bottom: 20px; }
+
+/* Hockey stick chart */
+.chart-area {
+  flex: 1;
+  position: relative;
+  margin: 10px 0;
+}
+.chart-label { font-size: 10px; color: #999; }
+.chart-line {
+  position: absolute;
+  bottom: 20px; left: 30px;
+  width: calc(100% - 60px);
+  height: calc(100% - 40px);
+}
+.hockey-stick {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 100%;
+  background: no-repeat;
+}
+/* SVG hockey stick */
+.chart-svg { width: 100%; height: 100%; }
+
+.slide-footer {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: #bbb;
+  padding-top: 8px; border-top: 1px solid #eee;
+}
+
+/* Slide nav */
+.slide-nav {
+  display: flex; gap: 6px; justify-content: center;
+}
+.slide-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #333; cursor: pointer;
+}
+.slide-dot.active { background: #00d4ff; }
+
+/* Right panel - VC Reactions */
+.vc-panel {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vc-title {
+  font-size: 16px; font-weight: bold; color: #ffaa00;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.vc-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+}
+.vc-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  border: 2px solid #333;
+}
+.vc-info { flex: 1; }
+.vc-name { font-size: 13px; font-weight: bold; }
+.vc-firm { font-size: 10px; color: #00d4ff; }
+.vc-thought {
+  font-size: 11px; color: #ccc; margin-top: 4px;
+  font-style: italic;
+}
+
+/* Interest meter */
+.interest-meter {
+  display: flex; align-items: center; gap: 6px; margin-top: 6px;
+}
+.interest-label { font-size: 9px; color: #888; }
+.interest-bar-bg {
+  flex: 1; height: 8px;
+  background: #1a1a2e; border-radius: 4px; overflow: hidden;
+}
+.interest-bar { height: 100%; border-radius: 4px; transition: width 0.5s; }
+
+/* Audience questions */
+.question-box {
+  background: rgba(255,70,70,0.1);
+  border: 1px solid #ff4444;
+  border-radius: 10px;
+  padding: 12px;
+}
+.question-title { font-size: 12px; font-weight: bold; color: #ff4444; margin-bottom: 6px; }
+.question-text { font-size: 12px; color: #ccc; margin-bottom: 10px; line-height: 1.5; }
+.answer-options { display: flex; flex-direction: column; gap: 6px; }
+.answer-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #ccc;
+  cursor: pointer;
+}
+.answer-btn:hover { border-color: #00d4ff; color: white; }
+
+/* Confidence meter */
+.confidence {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.conf-label { font-size: 11px; color: #888; white-space: nowrap; }
+.conf-bar-bg { flex: 1; height: 14px; background: #1a1a2e; border-radius: 7px; overflow: hidden; }
+.conf-bar { height: 100%; border-radius: 7px; background: linear-gradient(90deg, #ff4444, #ffaa00, #00ff88); }
+.conf-value { font-size: 14px; font-weight: bold; color: #ffaa00; width: 40px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  <div class="title">💰 Fundraising — Series A Pitch</div>
+  <div class="stage">📊 Slide 4 of 10 • "The Hockey Stick" • Round Target: $5M</div>
+</div>
+
+<div class="main">
+  <div class="pitch-area">
+    <!-- Slide -->
+    <div class="slide">
+      <div class="slide-header">DisruptoCloud — Series A</div>
+      <div class="slide-title">📈 Revenue Projections</div>
+      <div class="slide-subtitle">"Conservative" estimates (narrator: they were not conservative)</div>
+      
+      <div class="chart-area">
+        <svg class="chart-svg" viewBox="0 0 500 200">
+          <!-- Grid -->
+          <line x1="50" y1="20" x2="50" y2="180" stroke="#eee" stroke-width="1"/>
+          <line x1="50" y1="180" x2="480" y2="180" stroke="#eee" stroke-width="1"/>
+          <line x1="50" y1="140" x2="480" y2="140" stroke="#f5f5f5" stroke-width="0.5"/>
+          <line x1="50" y1="100" x2="480" y2="100" stroke="#f5f5f5" stroke-width="0.5"/>
+          <line x1="50" y1="60" x2="480" y2="60" stroke="#f5f5f5" stroke-width="0.5"/>
+          
+          <!-- Y labels -->
+          <text x="45" y="184" text-anchor="end" font-size="9" fill="#999">$0</text>
+          <text x="45" y="144" text-anchor="end" font-size="9" fill="#999">$5M</text>
+          <text x="45" y="104" text-anchor="end" font-size="9" fill="#999">$10M</text>
+          <text x="45" y="64" text-anchor="end" font-size="9" fill="#999">$15M</text>
+          <text x="45" y="24" text-anchor="end" font-size="9" fill="#999">$20M</text>
+          
+          <!-- X labels -->
+          <text x="90" y="195" text-anchor="middle" font-size="9" fill="#999">2024</text>
+          <text x="200" y="195" text-anchor="middle" font-size="9" fill="#999">2025</text>
+          <text x="310" y="195" text-anchor="middle" font-size="9" fill="#999">2026</text>
+          <text x="420" y="195" text-anchor="middle" font-size="9" fill="#999">2027</text>
+          
+          <!-- Actual (solid) -->
+          <polyline points="60,178 90,176 120,174 150,172 180,170 210,166 240,158" 
+                    fill="none" stroke="#00d4ff" stroke-width="3"/>
+          <circle cx="240" cy="158" r="4" fill="#00d4ff"/>
+          <text x="248" y="155" font-size="9" fill="#00d4ff" font-weight="bold">Actual: $580K</text>
+          
+          <!-- Projected (dashed hockey stick) -->
+          <polyline points="240,158 270,148 300,130 330,105 360,70 390,35 420,15 450,5" 
+                    fill="none" stroke="#00ff88" stroke-width="2.5" stroke-dasharray="6,4"/>
+          <text x="452" y="12" font-size="10" fill="#00ff88" font-weight="bold">$18M ARR 🚀</text>
+          
+          <!-- "Optimistic" line -->
+          <polyline points="240,158 300,100 360,40 420,10" 
+                    fill="none" stroke="#ffaa00" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5"/>
+          <text x="425" y="12" font-size="8" fill="#ffaa00" opacity="0.6">Optimistic</text>
+          
+          <!-- Reality check zone -->
+          <rect x="240" y="130" width="210" height="50" fill="#ff4444" opacity="0.05" rx="5"/>
+          <text x="345" y="165" text-anchor="middle" font-size="8" fill="#ff4444" opacity="0.4">Reality Zone™</text>
+          
+          <!-- Today marker -->
+          <line x1="240" y1="20" x2="240" y2="180" stroke="#ffaa00" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="240" y="16" text-anchor="middle" font-size="8" fill="#ffaa00">TODAY</text>
+        </svg>
+      </div>
+      
+      <div class="slide-footer">
+        <span>* Projections assume 15% MoM growth, 0 churn, and 2 miracles</span>
+        <span>Slide 4 / 10</span>
+      </div>
+    </div>
+
+    <div class="slide-nav">
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot active"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+      <div class="slide-dot"></div>
+    </div>
+  </div>
+
+  <!-- VC Panel -->
+  <div class="vc-panel">
+    <div class="vc-title">🤵 VC Panel Reactions</div>
+
+    <div class="vc-card">
+      <div class="vc-avatar" style="background:linear-gradient(135deg,#2a4a2a,#1a2a1a);">🦈</div>
+      <div class="vc-info">
+        <div class="vc-name">Victoria Capital</div>
+        <div class="vc-firm">Andreessen Borrowed • Partner</div>
+        <div class="vc-thought">"Interesting TAM, but that hockey stick makes my left eye twitch..."</div>
+        <div class="interest-meter">
+          <div class="interest-label">Interest</div>
+          <div class="interest-bar-bg"><div class="interest-bar" style="width:62%;background:linear-gradient(90deg,#ffaa00,#00ff88);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vc-card">
+      <div class="vc-avatar" style="background:linear-gradient(135deg,#4a2a4a,#2a1a2a);">🎩</div>
+      <div class="vc-info">
+        <div class="vc-name">Bradley Bankroll III</div>
+        <div class="vc-firm">Sequoia Copycat • Managing Director</div>
+        <div class="vc-thought">"Can you add AI to the hockey stick slide? My LPs love AI."</div>
+        <div class="interest-meter">
+          <div class="interest-label">Interest</div>
+          <div class="interest-bar-bg"><div class="interest-bar" style="width:78%;background:linear-gradient(90deg,#ffaa00,#00ff88);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vc-card">
+      <div class="vc-avatar" style="background:linear-gradient(135deg,#4a4a2a,#2a2a1a);">🧐</div>
+      <div class="vc-info">
+        <div class="vc-name">Sandra Skeptic</div>
+        <div class="vc-firm">First Round Reject • Principal</div>
+        <div class="vc-thought">"15% MoM growth AND zero churn? In this economy?"</div>
+        <div class="interest-meter">
+          <div class="interest-label">Interest</div>
+          <div class="interest-bar-bg"><div class="interest-bar" style="width:28%;background:#ff4444;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="question-box">
+      <div class="question-title">❓ Sandra has a question!</div>
+      <div class="question-text">"Your churn is 8% but you're projecting zero churn next year. Walk me through that math."</div>
+      <div class="answer-options">
+        <div class="answer-btn">📊 "Our new onboarding reduces churn by 60%..." (+Credibility)</div>
+        <div class="answer-btn">🤥 "Actually, those are net revenue numbers..." (+Buzzword, −Trust)</div>
+        <div class="answer-btn">🙄 "Great question, let me get back to you..." (−Interest)</div>
+      </div>
+    </div>
+
+    <!-- Confidence -->
+    <div class="confidence">
+      <div class="conf-label">💪 Pitch Confidence</div>
+      <div class="conf-bar-bg"><div class="conf-bar" style="width:58%;"></div></div>
+      <div class="conf-value">58%</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

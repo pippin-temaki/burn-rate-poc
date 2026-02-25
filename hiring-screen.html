@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  width: 1200px; height: 800px; 
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+.hud {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.6);
+  border-bottom: 2px solid #00d4ff;
+  font-size: 13px;
+}
+.company-name { font-size: 18px; font-weight: bold; color: #00d4ff; }
+.runway { background: #ff4444; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+
+.container {
+  display: flex;
+  height: calc(100% - 44px);
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Left - Candidate Cards */
+.candidates {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.section-title {
+  font-size: 18px; font-weight: bold; color: #00d4ff;
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.subtitle { font-size: 11px; color: #666; margin-bottom: 8px; }
+
+.candidate {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.candidate:hover { border-color: #00d4ff; background: rgba(0,212,255,0.05); }
+.candidate.selected { border-color: #00ff88; background: rgba(0,255,136,0.05); }
+
+.avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.candidate-info { flex: 1; }
+.candidate-name { font-size: 14px; font-weight: bold; }
+.candidate-role { font-size: 11px; color: #00d4ff; margin: 2px 0; }
+.candidate-bio { font-size: 10px; color: #999; line-height: 1.4; }
+.candidate-traits { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.trait {
+  font-size: 9px; padding: 2px 8px; border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+}
+.trait-good { color: #00ff88; border: 1px solid #00ff88; }
+.trait-bad { color: #ff4444; border: 1px solid #ff4444; }
+.trait-neutral { color: #ffaa00; border: 1px solid #ffaa00; }
+
+.salary {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 13px; font-weight: bold; color: #ffaa00;
+}
+
+.stats-row {
+  display: flex; gap: 12px; margin-top: 6px;
+}
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+  width: 50px;
+}
+.stat-bar-bg {
+  width: 40px; height: 6px; background: #1a1a2e;
+  border-radius: 3px; overflow: hidden;
+}
+.stat-bar { height: 100%; border-radius: 3px; }
+.stat-label { font-size: 8px; color: #666; margin-top: 2px; }
+
+/* Right - Details */
+.details {
+  width: 360px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+}
+.detail-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 12px;
+  border: 3px solid #00d4ff;
+}
+.detail-name { text-align: center; font-size: 20px; font-weight: bold; }
+.detail-role { text-align: center; font-size: 13px; color: #00d4ff; margin: 4px 0 16px; }
+
+.detail-section { margin-bottom: 14px; }
+.detail-section-title { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 6px; }
+
+.skill-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.skill-name { width: 80px; font-size: 11px; color: #ccc; }
+.skill-bar-bg { flex: 1; height: 10px; background: #1a1a2e; border-radius: 5px; overflow: hidden; }
+.skill-bar { height: 100%; border-radius: 5px; }
+.skill-value { width: 30px; text-align: right; font-size: 11px; font-weight: bold; }
+
+.demands {
+  background: rgba(255,170,0,0.1);
+  border: 1px solid #ffaa00;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+}
+.demands-title { font-size: 12px; font-weight: bold; color: #ffaa00; margin-bottom: 6px; }
+.demand-item { margin-bottom: 4px; }
+
+.hire-buttons { display: flex; gap: 8px; margin-top: 16px; }
+.hire-btn {
+  flex: 1; padding: 10px; border-radius: 8px;
+  text-align: center; cursor: pointer; font-weight: bold; font-size: 13px;
+  border: none;
+}
+.btn-hire { background: #00ff88; color: #000; }
+.btn-pass { background: #333; color: #888; border: 1px solid #555; }
+.btn-lowball { background: #ffaa00; color: #000; }
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div style="display:flex;gap:20px;align-items:center;">
+    <div class="company-name">🚀 DisruptoCloud</div>
+    <div style="font-size:12px;color:#888;">👥 Team: 8/12 • Budget: $42K/mo</div>
+  </div>
+  <div class="runway">🔥 RUNWAY: 7 MONTHS</div>
+</div>
+
+<div class="container">
+  <div class="candidates">
+    <div class="section-title">👤 Hiring — Available Candidates</div>
+    <div class="subtitle">4 applicants this week. Recruiting budget: $500/post</div>
+
+    <div class="candidate selected">
+      <div class="avatar" style="background:linear-gradient(135deg,#2a5a2a,#1a3a1a);">🧙‍♂️</div>
+      <div class="candidate-info">
+        <div class="candidate-name">Marcus "10x" Thompson</div>
+        <div class="candidate-role">Full-Stack Engineer (Senior)</div>
+        <div class="candidate-bio">Ex-FAANG. Built 3 YC startups' MVPs. Insists on using Rust for everything, including the landing page. Has opinions about tabs vs spaces.</div>
+        <div class="candidate-traits">
+          <span class="trait trait-good">10x Productivity</span>
+          <span class="trait trait-good">System Design</span>
+          <span class="trait trait-bad">Strong Opinions™</span>
+          <span class="trait trait-neutral">Flight Risk</span>
+        </div>
+      </div>
+      <div class="salary">$18K/mo</div>
+    </div>
+
+    <div class="candidate">
+      <div class="avatar" style="background:linear-gradient(135deg,#5a2a5a,#3a1a3a);">💅</div>
+      <div class="candidate-info">
+        <div class="candidate-name">Jessica "Hustler" Park</div>
+        <div class="candidate-role">Growth Marketing Lead</div>
+        <div class="candidate-bio">Grew a DTC brand from 0 to $2M ARR with TikTok. Says "growth hacking" unironically. Will try to A/B test the office thermostat.</div>
+        <div class="candidate-traits">
+          <span class="trait trait-good">Viral Marketing</span>
+          <span class="trait trait-good">Data-Driven</span>
+          <span class="trait trait-bad">Buzzword Addicted</span>
+          <span class="trait trait-neutral">Wants Equity</span>
+        </div>
+      </div>
+      <div class="salary">$12K/mo</div>
+    </div>
+
+    <div class="candidate">
+      <div class="avatar" style="background:linear-gradient(135deg,#2a2a5a,#1a1a3a);">🎨</div>
+      <div class="candidate-info">
+        <div class="candidate-name">Oliver "Pixel Perfect" Svensson</div>
+        <div class="candidate-role">Product Designer (UI/UX)</div>
+        <div class="candidate-bio">Portfolio is gorgeous. Takes 3 weeks for a button redesign. Will passive-aggressively Slack about border-radius consistency at 2am.</div>
+        <div class="candidate-traits">
+          <span class="trait trait-good">Beautiful Design</span>
+          <span class="trait trait-bad">Perfectionist</span>
+          <span class="trait trait-bad">Slow Shipper</span>
+          <span class="trait trait-neutral">Remote Only</span>
+        </div>
+      </div>
+      <div class="salary">$11K/mo</div>
+    </div>
+
+    <div class="candidate">
+      <div class="avatar" style="background:linear-gradient(135deg,#5a4a2a,#3a2a1a);">🎓</div>
+      <div class="candidate-info">
+        <div class="candidate-name">Fresh Grad Freddy</div>
+        <div class="candidate-role">Junior Developer (Intern→FTE?)</div>
+        <div class="candidate-bio">Just finished a bootcamp. LinkedIn says "Passionate about disrupting industries." Knows React. Sort of. Will accept pizza as compensation.</div>
+        <div class="candidate-traits">
+          <span class="trait trait-good">Cheap!</span>
+          <span class="trait trait-good">Enthusiastic</span>
+          <span class="trait trait-bad">Stack Overflow Dependent</span>
+          <span class="trait trait-neutral">Needs Mentoring</span>
+        </div>
+      </div>
+      <div class="salary">$4K/mo</div>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="details">
+    <div class="detail-avatar" style="background:linear-gradient(135deg,#2a5a2a,#1a3a1a);">🧙‍♂️</div>
+    <div class="detail-name">Marcus "10x" Thompson</div>
+    <div class="detail-role">Full-Stack Engineer (Senior)</div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Skills</div>
+      <div class="skill-row">
+        <div class="skill-name">Coding</div>
+        <div class="skill-bar-bg"><div class="skill-bar" style="width:95%;background:#00ff88;"></div></div>
+        <div class="skill-value" style="color:#00ff88;">95</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-name">Speed</div>
+        <div class="skill-bar-bg"><div class="skill-bar" style="width:88%;background:#00ff88;"></div></div>
+        <div class="skill-value" style="color:#00ff88;">88</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-name">Teamwork</div>
+        <div class="skill-bar-bg"><div class="skill-bar" style="width:35%;background:#ff4444;"></div></div>
+        <div class="skill-value" style="color:#ff4444;">35</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-name">Loyalty</div>
+        <div class="skill-bar-bg"><div class="skill-bar" style="width:42%;background:#ffaa00;"></div></div>
+        <div class="skill-value" style="color:#ffaa00;">42</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-name">Ego</div>
+        <div class="skill-bar-bg"><div class="skill-bar" style="width:92%;background:#ff4444;"></div></div>
+        <div class="skill-value" style="color:#ff4444;">92</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="demands">
+        <div class="demands-title">📋 Demands</div>
+        <div class="demand-item">💰 $18,000/month (non-negotiable)</div>
+        <div class="demand-item">📈 1.5% equity (vesting 4yr cliff)</div>
+        <div class="demand-item">🏠 Remote 4 days/week</div>
+        <div class="demand-item">🖥️ M4 MacBook Pro (maxed out)</div>
+        <div class="demand-item">☕ Oat milk latte budget ($200/mo)</div>
+        <div class="demand-item">🚫 Will NOT write PHP</div>
+      </div>
+    </div>
+
+    <div class="hire-buttons">
+      <div class="hire-btn btn-hire">Hire ✅</div>
+      <div class="hire-btn btn-lowball">Lowball 💸</div>
+      <div class="hire-btn btn-pass">Pass ❌</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
