@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>🔥 Burn Rate — SaaS Startup Simulator</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   BURN RATE — Theme Hospital meets Silicon Valley
+   ═══════════════════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --cyan: #00d4ff;
+  --green: #00ff88;
+  --amber: #ffaa00;
+  --red: #ff4444;
+  --panel-bg: rgba(0,0,0,0.7);
+  --card-bg: rgba(255,255,255,0.05);
+  --border: #333;
+}
+
+body {
+  min-width: 1200px; min-height: 800px;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: white;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ─── Animations ─── */
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.6} }
+@keyframes slideIn { from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1} }
+@keyframes fadeIn { from{opacity:0}to{opacity:1} }
+@keyframes bobble { 0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)} }
+@keyframes popIn { 0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1} }
+@keyframes shake { 0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)} }
+@keyframes glow { 0%,100%{box-shadow:0 0 5px rgba(0,212,255,0.3)}50%{box-shadow:0 0 20px rgba(0,212,255,0.6)} }
+@keyframes burnPulse { 0%,100%{text-shadow:0 0 5px #ff4444}50%{text-shadow:0 0 15px #ff4444,0 0 30px #ff0000} }
+@keyframes confetti { 0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(400px) rotate(720deg);opacity:0} }
+
+/* ─── HUD ─── */
+.hud {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.6);
+  border-bottom: 2px solid var(--cyan);
+  font-size: 13px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.hud-left { display: flex; gap: 20px; align-items: center; }
+.hud-right { display: flex; gap: 16px; align-items: center; }
+.company-name {
+  font-size: 18px; font-weight: bold; color: var(--cyan);
+  cursor: default;
+}
+.metric { text-align: center; min-width: 60px; }
+.metric-value { font-size: 15px; font-weight: bold; color: var(--green); transition: color 0.3s; }
+.metric-label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric.warn .metric-value { color: var(--amber); }
+.metric.bad .metric-value { color: var(--red); }
+.runway-badge {
+  background: var(--red); color: white;
+  padding: 4px 12px; border-radius: 12px;
+  font-weight: bold; font-size: 12px;
+  animation: pulse 1.5s infinite;
+  white-space: nowrap;
+}
+.runway-badge.ok { background: var(--green); color: #000; animation: none; }
+.runway-badge.warn { background: var(--amber); color: #000; animation: pulse 2s infinite; }
+.month-display {
+  font-size: 12px; color: var(--cyan);
+  background: rgba(0,212,255,0.1);
+  padding: 4px 10px; border-radius: 8px;
+  border: 1px solid rgba(0,212,255,0.3);
+}
+
+/* ─── Main Layout ─── */
+.main-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Office Grid ─── */
+.office {
+  flex: 1;
+  background:
+    linear-gradient(rgba(0,100,200,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,100,200,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.desk {
+  position: absolute;
+  width: 85px; height: 60px;
+  background: linear-gradient(135deg, #2a3a5c, #1e2d4a);
+  border: 1px solid #3a5a8c;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: default;
+  transition: transform 0.2s, border-color 0.3s;
+}
+.desk:hover { transform: scale(1.05); border-color: var(--cyan); }
+.desk .emoji { font-size: 22px; }
+.desk .name { font-size: 8px; color: #88aacc; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; }
+.desk .role { font-size: 7px; color: #667; }
+.desk .bubble {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px;
+  font-size: 8px; white-space: nowrap;
+  border: 1px solid;
+  animation: bobble 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.bubble-good { border-color: var(--green) !important; color: var(--green); }
+.bubble-bad { border-color: var(--red) !important; color: var(--red); }
+.bubble-meh { border-color: var(--amber) !important; color: var(--amber); }
+
+.amenity {
+  position: absolute;
+  width: 64px; height: 50px;
+  background: linear-gradient(135deg, #3a2a5c, #2e1d4a);
+  border: 1px solid #5a3a8c;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: default;
+}
+.amenity .emoji { font-size: 20px; }
+.amenity .label { font-size: 7px; color: #aa88cc; margin-top: 2px; }
+
+/* Tech Debt Bar */
+.tech-debt-bar {
+  position: absolute; bottom: 50px; left: 20px; right: 20px;
+}
+.tech-debt-bar .td-label { font-size: 10px; color: var(--red); margin-bottom: 4px; }
+.tech-debt-bar .td-track {
+  background: #1a1a2e; border: 1px solid #333;
+  border-radius: 4px; height: 14px; overflow: hidden;
+}
+.tech-debt-bar .td-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--red));
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+.tech-debt-bar .td-text { font-size: 9px; color: #888; margin-top: 2px; }
+
+/* ─── Right Panel (Feed) ─── */
+.feed-panel {
+  width: 260px;
+  background: var(--panel-bg);
+  border-left: 2px solid var(--border);
+  padding: 10px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.feed-panel::-webkit-scrollbar { width: 4px; }
+.feed-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+.feed-title {
+  font-size: 14px; font-weight: bold; color: var(--cyan);
+  margin-bottom: 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.feed-item {
+  background: var(--card-bg);
+  border-left: 3px solid;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 0 4px 4px 0;
+  font-size: 11px;
+  line-height: 1.4;
+  animation: slideIn 0.3s ease;
+}
+.feed-item strong { display: block; margin-bottom: 2px; }
+.feed-green { border-color: var(--green); }
+.feed-red { border-color: var(--red); }
+.feed-amber { border-color: var(--amber); }
+.feed-cyan { border-color: var(--cyan); }
+
+/* ─── Bottom Toolbar ─── */
+.toolbar {
+  display: flex;
+  padding: 6px 12px;
+  gap: 6px;
+  background: rgba(0,0,0,0.8);
+  border-top: 2px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+  align-items: center;
+}
+.tool-btn {
+  background: linear-gradient(135deg, #2a3a5c, #1e2d4a);
+  border: 1px solid #3a5a8c;
+  color: white;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tool-btn:hover { border-color: var(--cyan); background: rgba(0,212,255,0.1); }
+.tool-btn.active { border-color: var(--green); background: rgba(0,255,136,0.1); }
+.tool-btn .ico { font-size: 14px; }
+.tool-btn.pivot-btn {
+  background: linear-gradient(135deg, #5a1a1a, #3a0a0a);
+  border-color: var(--red);
+  color: var(--red);
+  font-weight: bold;
+}
+.tool-btn.pivot-btn:hover { background: rgba(255,68,68,0.2); }
+.tool-btn.pivot-btn.cooldown { opacity: 0.4; cursor: not-allowed; }
+
+.speed-controls {
+  margin-left: auto;
+  display: flex; gap: 4px; align-items: center;
+}
+.speed-btn {
+  width: 32px; height: 30px;
+  background: #1e2d4a; border: 1px solid #3a5a8c;
+  color: white; border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+.speed-btn:hover { border-color: var(--cyan); }
+.speed-btn.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.1); }
+
+/* ─── Slide-In Panels ─── */
+.slide-panel {
+  position: fixed;
+  top: 44px;
+  right: 260px;
+  width: 480px;
+  bottom: 42px;
+  background: rgba(10,15,30,0.97);
+  border-left: 2px solid var(--cyan);
+  z-index: 50;
+  overflow-y: auto;
+  padding: 16px;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+.slide-panel.open { transform: translateX(0); }
+.slide-panel::-webkit-scrollbar { width: 4px; }
+.slide-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title { font-size: 18px; font-weight: bold; color: var(--cyan); }
+.panel-close {
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid #555; border-radius: 50%;
+  color: #888; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.panel-close:hover { color: white; border-color: var(--red); }
+
+/* ─── Candidate Cards ─── */
+.candidate-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex; gap: 12px;
+  transition: all 0.2s;
+  position: relative;
+  animation: popIn 0.3s ease;
+}
+.candidate-card:hover { border-color: var(--cyan); }
+.cand-avatar {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.cand-info { flex: 1; }
+.cand-name { font-size: 13px; font-weight: bold; }
+.cand-role { font-size: 10px; color: var(--cyan); margin: 2px 0; }
+.cand-bio { font-size: 10px; color: #999; line-height: 1.4; margin-bottom: 6px; }
+.cand-traits { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.trait {
+  font-size: 8px; padding: 2px 6px; border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+.trait-good { color: var(--green); border: 1px solid var(--green); }
+.trait-bad { color: var(--red); border: 1px solid var(--red); }
+.trait-neutral { color: var(--amber); border: 1px solid var(--amber); }
+.cand-salary {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 12px; font-weight: bold; color: var(--amber);
+}
+.skill-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.skill-name { width: 50px; font-size: 9px; color: #aaa; }
+.skill-track { flex: 1; height: 6px; background: #1a1a2e; border-radius: 3px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.cand-actions { display: flex; gap: 6px; margin-top: 8px; }
+.cand-btn {
+  flex: 1; padding: 6px; border-radius: 6px;
+  text-align: center; cursor: pointer; font-weight: bold;
+  font-size: 11px; border: none; transition: all 0.2s;
+}
+.btn-hire { background: var(--green); color: #000; }
+.btn-hire:hover { background: #33ffaa; }
+.btn-pass { background: #333; color: #888; border: 1px solid #555; }
+.btn-pass:hover { color: white; border-color: var(--red); }
+
+/* ─── Product Feature Cards ─── */
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  animation: popIn 0.3s ease;
+}
+.feature-card.building { border-color: var(--cyan); }
+.feature-card.complete { border-color: var(--green); opacity: 0.7; }
+.feat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.feat-name { font-size: 13px; font-weight: bold; }
+.feat-impact { font-size: 10px; color: var(--green); }
+.feat-meta { display: flex; gap: 12px; font-size: 10px; color: #888; margin-bottom: 6px; }
+.feat-progress-track { height: 8px; background: #1a1a2e; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.feat-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--cyan), var(--green)); transition: width 0.5s; }
+.feat-assign {
+  display: inline-block; padding: 4px 10px;
+  background: rgba(0,212,255,0.1); border: 1px solid var(--cyan);
+  border-radius: 4px; font-size: 10px; color: var(--cyan);
+  cursor: pointer;
+}
+.feat-assign:hover { background: rgba(0,212,255,0.2); }
+.feat-assign.disabled { opacity: 0.3; cursor: not-allowed; }
+.feat-assigned { font-size: 10px; color: var(--green); }
+
+/* ─── Fundraising Panel ─── */
+.vc-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.vc-header { display: flex; gap: 10px; margin-bottom: 10px; }
+.vc-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+.vc-name { font-size: 14px; font-weight: bold; }
+.vc-firm { font-size: 10px; color: var(--cyan); }
+.vc-offer { font-size: 11px; color: #ccc; margin-top: 4px; }
+.vc-question {
+  background: rgba(255,170,0,0.1);
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px 0;
+}
+.vc-q-title { font-size: 11px; font-weight: bold; color: var(--amber); margin-bottom: 4px; }
+.vc-q-text { font-size: 11px; color: #ccc; margin-bottom: 8px; line-height: 1.4; }
+.vc-answer {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 10px; color: #ccc;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.2s;
+}
+.vc-answer:hover { border-color: var(--cyan); color: white; }
+.vc-result {
+  text-align: center; padding: 12px;
+  font-size: 14px; font-weight: bold;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.vc-result.success { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid var(--green); }
+.vc-result.fail { background: rgba(255,68,68,0.1); color: var(--red); border: 1px solid var(--red); }
+
+/* ─── Metrics Dashboard ─── */
+.chart-container { margin-bottom: 16px; }
+.chart-title { font-size: 12px; font-weight: bold; color: var(--cyan); margin-bottom: 8px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 100px; padding: 0 4px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.bar {
+  width: 100%; min-width: 8px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s;
+}
+.bar-label { font-size: 7px; color: #666; margin-top: 2px; }
+.chart-axis { border-top: 1px solid #333; margin-top: 2px; }
+.metric-summary {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 16px;
+}
+.metric-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.metric-box .val { font-size: 18px; font-weight: bold; }
+.metric-box .lbl { font-size: 9px; color: #888; text-transform: uppercase; }
+
+/* ─── Modal Overlay (Events) ─── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s;
+}
+.modal {
+  background: rgba(10,15,30,0.97);
+  border: 2px solid var(--amber);
+  border-radius: 14px;
+  padding: 20px 24px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: popIn 0.3s ease;
+}
+.modal-title { font-size: 18px; font-weight: bold; color: var(--amber); margin-bottom: 6px; }
+.modal-text { font-size: 12px; color: #ccc; line-height: 1.6; margin-bottom: 14px; }
+.modal-choices { display: flex; flex-direction: column; gap: 6px; }
+.modal-choice {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11px; color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+.modal-choice:hover { border-color: var(--cyan); color: white; background: rgba(0,212,255,0.05); }
+
+/* ─── Game Over / Win Screen ─── */
+.endscreen-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.5s;
+}
+.endscreen {
+  text-align: center;
+  animation: popIn 0.5s ease;
+}
+.endscreen h1 { font-size: 36px; margin-bottom: 8px; }
+.endscreen .subtitle { font-size: 16px; color: #ccc; margin-bottom: 24px; }
+.endscreen .stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px; margin-bottom: 24px;
+}
+.endscreen .stat-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.endscreen .stat-box .val { font-size: 20px; font-weight: bold; color: var(--cyan); }
+.endscreen .stat-box .lbl { font-size: 10px; color: #888; }
+.restart-btn {
+  background: var(--cyan); color: #000;
+  border: none; border-radius: 8px;
+  padding: 12px 36px; font-size: 16px; font-weight: bold;
+  cursor: pointer; transition: all 0.2s;
+}
+.restart-btn:hover { background: #33ddff; transform: scale(1.05); }
+
+/* Start screen */
+.start-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  animation: fadeIn 0.5s;
+}
+.start-box {
+  text-align: center;
+  animation: popIn 0.5s ease;
+}
+.start-box h1 { font-size: 48px; margin-bottom: 4px; }
+.start-box h2 { font-size: 22px; color: var(--cyan); margin-bottom: 8px; font-weight: normal; }
+.start-box .tagline { font-size: 14px; color: #888; margin-bottom: 30px; }
+.start-btn {
+  background: var(--green); color: #000;
+  border: none; border-radius: 10px;
+  padding: 14px 48px; font-size: 18px; font-weight: bold;
+  cursor: pointer; transition: all 0.2s;
+  animation: glow 2s infinite;
+}
+.start-btn:hover { transform: scale(1.05); background: #33ffaa; }
+.start-tips {
+  margin-top: 24px; font-size: 11px; color: #666;
+  max-width: 400px; text-align: left; line-height: 1.6;
+}
+
+/* Confetti particles */
+.confetti-piece {
+  position: fixed; width: 10px; height: 10px;
+  z-index: 250; pointer-events: none;
+  animation: confetti 2s ease-out forwards;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ START SCREEN ═══ -->
+<div id="startScreen" class="start-overlay">
+  <div class="start-box">
+    <h1>🔥 BURN RATE</h1>
+    <h2>SaaS Startup Simulator</h2>
+    <div class="tagline">Build. Hire. Pivot. Pray.</div>
+    <button class="start-btn" onclick="startGame()">▶ START COMPANY</button>
+    <div class="start-tips">
+      <strong style="color:var(--cyan)">How to play:</strong><br>
+      • Hire employees, build features, raise funding<br>
+      • Keep your runway above 0 or it's game over<br>
+      • Reach $1M ARR or get acquired to win<br>
+      • Pivot when desperate (there's always Web3)<br>
+      • Every startup trope you've ever heard is in here
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HUD ═══ -->
+<div class="hud">
+  <div class="hud-left">
+    <div class="company-name" id="companyName">🚀 Loading...</div>
+    <div class="metric">
+      <div class="metric-value" id="hudMRR">$0</div>
+      <div class="metric-label">MRR</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value" id="hudUsers">0</div>
+      <div class="metric-label">Users</div>
+    </div>
+    <div class="metric" id="hudChurnWrap">
+      <div class="metric-value" id="hudChurn">0%</div>
+      <div class="metric-label">Churn</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value" id="hudValuation">$0</div>
+      <div class="metric-label">Valuation</div>
+    </div>
+    <div class="metric bad">
+      <div class="metric-value" id="hudBurn">-$0/mo</div>
+      <div class="metric-label">Burn Rate</div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="month-display" id="monthDisplay">Month 1</div>
+    <div class="runway-badge" id="hudRunway">🔥 RUNWAY: ∞</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN AREA ═══ -->
+<div class="main-area">
+  <!-- Office View -->
+  <div class="office" id="officeView">
+    <div class="tech-debt-bar">
+      <div class="td-label">⚠️ TECH DEBT</div>
+      <div class="td-track"><div class="td-fill" id="techDebtFill" style="width:5%"></div></div>
+      <div class="td-text" id="techDebtText">5% — "Move fast and break things"</div>
+    </div>
+  </div>
+
+  <!-- Feed Panel -->
+  <div class="feed-panel">
+    <div class="feed-title">📋 Feed</div>
+    <div id="feedList"></div>
+  </div>
+</div>
+
+<!-- ═══ TOOLBAR ═══ -->
+<div class="toolbar">
+  <button class="tool-btn" onclick="togglePanel('hire')"><span class="ico">👤</span> Hire</button>
+  <button class="tool-btn" onclick="togglePanel('product')"><span class="ico">📦</span> Product</button>
+  <button class="tool-btn" onclick="togglePanel('fundraise')"><span class="ico">💰</span> Fundraise</button>
+  <button class="tool-btn" onclick="togglePanel('metrics')"><span class="ico">📊</span> Metrics</button>
+  <button class="tool-btn pivot-btn" id="pivotBtn" onclick="doPivot()"><span class="ico">🔄</span> PIVOT!</button>
+  <div class="speed-controls">
+    <button class="speed-btn" onclick="setSpeed(0)" id="spd0">⏸</button>
+    <button class="speed-btn active" onclick="setSpeed(1)" id="spd1">▶</button>
+    <button class="speed-btn" onclick="setSpeed(2)" id="spd2">2×</button>
+    <button class="speed-btn" onclick="setSpeed(3)" id="spd3">3×</button>
+  </div>
+</div>
+
+<!-- ═══ SLIDE PANELS ═══ -->
+<div class="slide-panel" id="hirePanel">
+  <div class="panel-header">
+    <div class="panel-title">👤 Hiring — Available Candidates</div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div id="hireCandidates"></div>
+</div>
+
+<div class="slide-panel" id="productPanel">
+  <div class="panel-header">
+    <div class="panel-title">📦 Product Roadmap</div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div id="productList"></div>
+</div>
+
+<div class="slide-panel" id="fundraisePanel">
+  <div class="panel-header">
+    <div class="panel-title">💰 Fundraising</div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div id="fundraiseContent"></div>
+</div>
+
+<div class="slide-panel" id="metricsPanel">
+  <div class="panel-header">
+    <div class="panel-title">📊 Metrics Dashboard</div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div id="metricsContent"></div>
+</div>
+
+<!-- ═══ EVENT MODAL ═══ -->
+<div class="modal-overlay" id="eventModal" style="display:none"></div>
+
+<!-- ═══ END SCREEN ═══ -->
+<div class="endscreen-overlay" id="endScreen" style="display:none"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   BURN RATE — Game Engine
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── DATA POOLS ───
+const FIRST_NAMES = ["Jake","Sarah","Marcus","Priya","Chad","Olivia","Aiden","Luna","Brayden","Zara","Felix","Mia","Raj","Kayla","Tyler","Nadia","Cody","Aria","Derek","Sienna","Ethan","Yuki","Liam","Fatima","Brett","Chloe","Dev","Tanya","Omar","Jess","Kai","Noor"];
+const LAST_NAMES = ["Chen","Patel","Thompson","O'Brien","Kim","Nakamura","Garcia","Okafor","Svensson","Kowalski","Dubois","Zhang","Shah","Murphy","Santos","Lee","Johansson","Gupta","Williams","Tanaka","Novak","Reyes","Ibrahim","Fischer"];
+const NICKNAMES = ['"10x"','"Hustle"','"Pixel"','"Stack"','"Crypto"','"Agile"','"Blockchain"','"Disrupt"','"Scale"','"Synergy"','"MVP"','"Scrum"','"DevOps"','"Growth"','"Cloud"','"The Intern"','"Machine Learning"'];
+
+const COMPANY_PREFIXES = ["Disrupt","Cloud","Sync","Hyper","Meta","Nano","Quantum","Turbo","Omni","Ultra","Cyber","Neo","Digi","Flexi","Smart"];
+const COMPANY_SUFFIXES = ["ly","ify","io","Hub","Stack","Flow","Base","Grid","Labs","Forge","Pulse","Wave","Sphere","Mint","Dash"];
+const COMPANY_TAGLINES = ["AI-Powered","Blockchain-Enabled","Cloud-Native","ML-Driven","Web3","Next-Gen","Enterprise-Grade","Hyper-Scalable"];
+
+const ROLES = ["Engineer","Designer","Growth Hacker","Sales","DevRel","PM","Data Scientist"];
+const ROLE_EMOJIS = {"Engineer":"👨‍💻","Designer":"🎨","Growth Hacker":"📣","Sales":"💼","DevRel":"🎤","PM":"📋","Data Scientist":"📊"};
+const ROLE_EMOJIS_ALT = {"Engineer":"👩‍💻","Designer":"💅","Growth Hacker":"🚀","Sales":"🤝","DevRel":"🎙️","PM":"📌","Data Scientist":"🧮"};
+
+const TRAITS = [
+  {name:"10x Engineer",type:"good"},{name:"Buzzword Addicted",type:"bad"},{name:"Flight Risk",type:"bad"},
+  {name:"LinkedIn Thought Leader",type:"neutral"},{name:"Remote or Quit",type:"neutral"},{name:"Oat Milk Only",type:"neutral"},
+  {name:"Strong Opinions™",type:"bad"},{name:"Stack Overflow Dependent",type:"bad"},{name:"Conference Addict",type:"neutral"},
+  {name:"Refuses to Write Tests",type:"bad"},{name:"Tab Spaces Warrior",type:"neutral"},{name:"Vim User (btw)",type:"neutral"},
+  {name:"Actually Ships",type:"good"},{name:"Mentors Others",type:"good"},{name:"Over-Engineers Everything",type:"bad"},
+  {name:"Emoji in Commits",type:"neutral"},{name:"Writes Docs",type:"good"},{name:"Meeting Marathoner",type:"bad"},
+  {name:"Side Project Addict",type:"neutral"},{name:"Ping Pong Pro",type:"neutral"},{name:"Reply-All Enthusiast",type:"bad"},
+  {name:"Rubber Duck Debug",type:"good"},{name:"Dark Mode Evangelist",type:"neutral"},{name:"Standup Monologuer",type:"bad"}
+];
+
+const BIOS = {
+  "Engineer":[
+    "Ex-FAANG. Built 3 YC startups' MVPs. Insists on using Rust for everything, including the landing page.",
+    "Self-taught. Learned to code from a YouTube tutorial that was only 40% wrong. Ships fast, breaks things faster.",
+    "Has a GitHub contribution graph that looks like a forest fire. Commits at 3am 'because the muse strikes.'",
+    "Claims to have invented microservices. Nobody can prove otherwise. Types at 200 WPM (mostly Stack Overflow URLs).",
+    "Computer Science PhD who can explain monads but can't center a div. Will rewrite your backend in Haskell.",
+    "Former game developer who pivoted to SaaS. Still names all variables after Final Fantasy characters."
+  ],
+  "Designer":[
+    "Portfolio is gorgeous. Takes 3 weeks for a button redesign. Will passive-aggressively Slack about border-radius at 2am.",
+    "Can detect a 1px misalignment from across the room. Has strong opinions about white space. Very strong opinions.",
+    "Ex-Apple designer who left because 'they were too conservative.' Has 47 Figma files for your landing page.",
+    "Studied design at RISD, studied memes at Reddit. Creates beautiful interfaces nobody knows how to use."
+  ],
+  "Growth Hacker":[
+    "Grew a DTC brand from 0 to $2M ARR with TikTok. Says 'growth hacking' unironically. Will A/B test the office thermostat.",
+    "Has more Twitter followers than your company has users. Calls everything 'a funnel.' Everything.",
+    "Previously ran marketing at a crypto startup that no longer exists. 'It was a great learning experience.'",
+    "Can calculate CAC/LTV ratio in their sleep. Literally has a spreadsheet tattooed on their forearm."
+  ],
+  "Sales":[
+    "Could sell ice to penguins. Closes deals at happy hours. Expense reports are... creative.",
+    "Former car salesperson who 'fell into SaaS.' Exceeds quota but nobody knows how. Possibly magic.",
+    "Has a Rolodex. An actual physical Rolodex. It's somehow more effective than your CRM.",
+    "Writes 'Closer' in their LinkedIn bio. Uses the word 'synergy' exactly 3 times per call."
+  ],
+  "DevRel":[
+    "Speaks at 14 conferences per year. Has more airline miles than code commits. Blog posts get 10K views each.",
+    "Built a personal brand larger than your startup. Will tweet about your product (if you let them expense avocado toast).",
+    "Former developer who discovered they like talking more than coding. Turns out that's a whole career."
+  ],
+  "PM":[
+    "Has 12 Jira boards, 8 Notion spaces, and 3 Miro boards. Can't find the actual product requirements in any of them.",
+    "Says 'let's take this offline' in every meeting. Nobody has ever successfully taken anything offline.",
+    "Writes PRDs at the speed of light. Nobody reads them. Ships features based on LinkedIn polls.",
+    "Former consultant who 'wanted to build things.' Now builds slide decks about building things."
+  ],
+  "Data Scientist":[
+    "PhD in something. Nobody's sure what. Makes dashboards that are beautiful and completely unactionable.",
+    "Can predict churn with 94% accuracy but can't predict when they'll finish the churn prediction model.",
+    "Spends 80% of time cleaning data, 15% complaining about data quality, 5% actual analysis. Those are good numbers."
+  ]
+};
+
+const FEATURE_POOL = [
+  {name:"AI-Powered Everything",months:3,mrrImpact:5000,techDebt:15,desc:"Slap AI on it. Investors love AI."},
+  {name:"Dark Mode (Critical)",months:1,mrrImpact:500,techDebt:2,desc:"P0 blocker. Users literally can't use the product without it."},
+  {name:"Blockchain Integration",months:4,mrrImpact:1000,techDebt:25,desc:"Nobody asked for this but the board mentioned Web3."},
+  {name:"Remove Feature Nobody Uses",months:1,mrrImpact:200,techDebt:-10,desc:"It was built for one customer who churned 6 months ago."},
+  {name:"Redesign Landing Page (Again)",months:1,mrrImpact:2000,techDebt:0,desc:"Third redesign this quarter. This time it'll convert, we promise."},
+  {name:"SSO for Enterprise",months:2,mrrImpact:8000,techDebt:5,desc:"Enterprise customers want it. They'll pay 10x. Worth it."},
+  {name:"Mobile App (lol)",months:5,mrrImpact:3000,techDebt:20,desc:"'It'll be just a React Native wrapper.' It was not just a wrapper."},
+  {name:"Slack Integration",months:2,mrrImpact:3000,techDebt:5,desc:"Because every SaaS needs to be in Slack. Every. Single. One."},
+  {name:"Analytics Dashboard Nobody Reads",months:2,mrrImpact:1500,techDebt:8,desc:"Beautiful charts. Zero decisions made from them. But it demos well."},
+  {name:"AI Chatbot Support",months:3,mrrImpact:4000,techDebt:12,desc:"Replace your support team with a bot that says 'I'm sorry to hear that.'"},
+  {name:"Crypto Payments",months:2,mrrImpact:500,techDebt:15,desc:"Accept payments in 47 different tokens nobody uses."},
+  {name:"NFT Rewards",months:3,mrrImpact:200,techDebt:20,desc:"Loyalty program but ✨on the blockchain✨. It's 2024, why not."},
+  {name:"Pivot to AI",months:4,mrrImpact:6000,techDebt:18,desc:"Rewrite everything with GPT. The product is now a prompt."},
+  {name:"GraphQL Rewrite",months:3,mrrImpact:0,techDebt:-15,desc:"The engineers are very excited. The business sees no difference."},
+  {name:"Microservices Migration",months:5,mrrImpact:0,techDebt:-20,desc:"Break the monolith into 47 microservices. What could go wrong?"},
+  {name:"GDPR Compliance (Oops)",months:2,mrrImpact:0,techDebt:5,desc:"We've been collecting data we shouldn't have. Lawyers are involved."},
+  {name:"Gamification Layer",months:2,mrrImpact:2500,techDebt:8,desc:"Add badges. Users love badges. Engagement go brrrr."},
+  {name:"API v2 (Breaking Changes)",months:3,mrrImpact:4000,techDebt:-8,desc:"'We'll maintain backwards compatibility.' (Narrator: They did not.)"},
+  {name:"Real-time Collaboration",months:4,mrrImpact:5000,techDebt:15,desc:"Like Google Docs but for [your product]. CRDTs are easy, right?"},
+  {name:"White-Label Solution",months:3,mrrImpact:7000,techDebt:12,desc:"Let other companies pretend they built your product. Enterprise loves this."}
+];
+
+const VC_FIRMS = [
+  {name:"Andreessen Borrowed",emoji:"🦈",style:"aggressive"},
+  {name:"Sequoia Copycat",emoji:"🎩",style:"prestigious"},
+  {name:"First Round Reject",emoji:"🧐",style:"skeptical"},
+  {name:"Benchmark Wannabe",emoji:"💎",style:"picky"},
+  {name:"Y Combinator Dropout",emoji:"🎓",style:"scrappy"},
+  {name:"SoftBankrupt",emoji:"🏦",style:"wild"},
+  {name:"Tiger Global Spending",emoji:"🐯",style:"aggressive"},
+  {name:"Founders Fund Cosplay",emoji:"🎭",style:"philosophical"}
+];
+
+const VC_QUESTIONS = [
+  {q:"What's your moat?",answers:[
+    {text:"📊 'Network effects — every user makes it better for other users.'",good:true,bonus:"credibility"},
+    {text:"🤥 'We have proprietary AI that nobody can replicate.'",good:false,bonus:null},
+    {text:"🙄 'First mover advantage.' (every VC's least favorite answer)",good:false,bonus:null}
+  ]},
+  {q:"How do you plan to reduce churn?",answers:[
+    {text:"📈 'Improved onboarding + customer success team.'",good:true,bonus:"credibility"},
+    {text:"🔒 'Annual contracts with 3-year lock-in.'",good:false,bonus:null},
+    {text:"🤷 'Churn is a feature, not a bug.'",good:false,bonus:null}
+  ]},
+  {q:"What happens if a well-funded competitor enters?",answers:[
+    {text:"🏃 'We'll out-execute. Our team ships 3x faster.'",good:true,bonus:"credibility"},
+    {text:"🤝 'We'll get acquired by them at a premium.'",good:false,bonus:null},
+    {text:"😤 'We'll pivot to a different market.'",good:false,bonus:null}
+  ]},
+  {q:"What's your path to profitability?",answers:[
+    {text:"📋 'Unit economics are positive at $50K MRR. We're scaling the playbook.'",good:true,bonus:"credibility"},
+    {text:"🚀 'Profitability? We're in growth mode. Profits are for later.'",good:false,bonus:null},
+    {text:"🤔 'What's profitability?' (laughs nervously)",good:false,bonus:null}
+  ]},
+  {q:"Why should we invest now vs. next round?",answers:[
+    {text:"📊 'Metrics are inflecting. You're getting in before the ramp.'",good:true,bonus:"credibility"},
+    {text:"⏰ 'Other firms are interested and moving fast.'",good:true,bonus:null},
+    {text:"🥺 'Because we really need the money.'",good:false,bonus:null}
+  ]},
+  {q:"How do you think about your TAM?",answers:[
+    {text:"📈 'Bottom-up: 50K companies × $12K ACV = $600M serviceable market.'",good:true,bonus:"credibility"},
+    {text:"🌍 'The global SaaS market is $200B. We just need 0.001%.'",good:false,bonus:null},
+    {text:"💡 'TAM is irrelevant when you're creating a new category.'",good:false,bonus:null}
+  ]}
+];
+
+const PIVOT_TYPES = [
+  {text:"🤖 We're an AI company now!",effect:"ai"},
+  {text:"⛓️ Pivoting to Web3!",effect:"web3"},
+  {text:"🏢 Going enterprise!",effect:"enterprise"},
+  {text:"🛒 It's a marketplace now!",effect:"marketplace"},
+  {text:"🔌 We're a platform!",effect:"platform"},
+  {text:"📱 Mobile-first pivot!",effect:"mobile"},
+  {text:"🎮 Adding gamification!",effect:"gaming"},
+  {text:"🌍 Going open source!",effect:"opensource"}
+];
+
+const EVENTS = [
+  {
+    title:"🦀 10x Engineer Wants to Rewrite in Rust",
+    text:"Your senior engineer has been watching too many conference talks and now insists the entire backend needs to be rewritten in Rust. 'It'll be faster,' they say, eyes gleaming.",
+    choices:[
+      {text:"✅ Accept — Let them rewrite it (−50% feature progress, +quality, −15% tech debt)",apply:s=>{s.features.forEach(f=>{if(f.building)f.progress*=0.5});s.techDebt=Math.max(0,s.techDebt-15);addFeed("green","Feature progress reset 50% but codebase improved.")}},
+      {text:"❌ Reject — Stay the course (−morale, risk of them quitting)",apply:s=>{s.morale-=15;if(Math.random()<0.3&&s.employees.length>1){let e=s.employees.find(e=>e.role==="Engineer");if(e){s.employees=s.employees.filter(x=>x!==e);addFeed("red",`😤 ${e.name} rage-quit over the Rust decision.`)}}else{addFeed("amber","Team morale dropped. Engineers are grumbling.")}}}
+    ]
+  },
+  {
+    title:"📰 TechCrunch Wants to Write About You",
+    text:"A TechCrunch reporter slid into your DMs. They want to do a feature story. This could be huge... or it could expose that your 'AI' is actually just if/else statements.",
+    choices:[
+      {text:"📸 Full access — Go big or go home (+users, but 30% chance of bad press)",apply:s=>{if(Math.random()<0.3){s.users=Math.max(10,s.users-Math.floor(s.users*0.1));s.morale-=10;addFeed("red","💀 TechCrunch: 'We looked under the hood. It's not AI.' Users -10%")}else{s.users+=Math.floor(s.users*0.4);addFeed("green","🎉 TechCrunch loved it! Users +40%!")}}},
+      {text:"📝 Controlled interview only (+users, safer)",apply:s=>{s.users+=Math.floor(s.users*0.15);addFeed("cyan","📰 Solid TechCrunch feature. Users +15%.")}},
+      {text:"🙅 Decline — Stay in stealth (no effect)",apply:s=>{addFeed("amber","Declined the press. Stealth mode continues.")}}
+    ]
+  },
+  {
+    title:"💸 AWS Bill is 3x Expected",
+    text:"Someone left a GPU instance running for 2 months. The AWS bill just arrived and it has more digits than your bank account. Jeff Bezos sends his regards.",
+    choices:[
+      {text:"💳 Pay it — Absorb the cost (−$15K cash)",apply:s=>{s.cash-=15000;addFeed("red","💸 Paid the surprise AWS bill. -$15K. Time to optimize.")}},
+      {text:"🔧 Downgrade infrastructure — Save money (−performance, risk of outage)",apply:s=>{s.cash-=5000;if(Math.random()<0.4){s.users-=Math.floor(s.users*0.05);addFeed("red","🔥 Downgraded servers. Site went down for 3 hours. Lost some users.")}else{addFeed("amber","Downgraded infrastructure. Running lean. Users seem fine... for now.")}}}
+    ]
+  },
+  {
+    title:"🏆 Competitor Raised $50M",
+    text:"Your main competitor just announced a massive Series B. Their CEO tweeted a thread about 'category creation.' Your team saw it. Morale is... complicated.",
+    choices:[
+      {text:"🔥 Rally the troops — 'We're David vs Goliath!' (+morale, +productivity)",apply:s=>{s.morale+=10;s.features.forEach(f=>{if(f.building)f.progress+=0.1});addFeed("green","💪 Team rallied! 'We'll outship them.' Morale boosted.")}},
+      {text:"😰 Panic — Try to match their features (−focus, +tech debt)",apply:s=>{s.techDebt+=10;s.morale-=5;addFeed("amber","Panicked pivot to match competitor. Tech debt climbing.")}},
+      {text:"🎯 Stay focused — Stick to your roadmap (no change)",apply:s=>{addFeed("cyan","Staying focused. Competitors are noise, customers are signal.")}}
+    ]
+  },
+  {
+    title:"🎙️ Employee Started a Podcast",
+    text:"Your DevRel person (or whoever felt like it) started a podcast called 'Disrupting the Disruption.' It's getting downloads... but they're doing it during work hours.",
+    choices:[
+      {text:"📢 Encourage it — Great marketing! (+brand awareness, −productivity)",apply:s=>{s.users+=Math.floor(s.users*0.08);addFeed("green","🎙️ Podcast is a hit! Brand awareness up, users +8%.")}},
+      {text:"⏰ Set boundaries — Work hours are for work (−morale, status quo)",apply:s=>{s.morale-=8;addFeed("amber","Put limits on podcast. Employee is 'disappointed but professional.'")}}
+    ]
+  },
+  {
+    title:"🏠 Return to Office Debate",
+    text:"Someone posted a Slack poll about RTO. It has 47 replies, 12 threads, and 3 people have changed their Slack status to '🏠 Remote Forever.' HR is hiding.",
+    choices:[
+      {text:"🏢 Mandate RTO — 3 days minimum (risk losing remote employees, +collaboration)",apply:s=>{let lost=s.employees.filter(()=>Math.random()<0.2);if(lost.length>0){s.employees=s.employees.filter(e=>!lost.includes(e));addFeed("red",`😤 ${lost.length} employee(s) quit over RTO. The Slack channel is on fire.`)}else{s.morale-=5;addFeed("amber","RTO mandated. Grumbling but compliance. Slack petition started.")}}},
+      {text:"🏠 Stay fully remote — Keep the peace (+morale, −spontaneous collaboration)",apply:s=>{s.morale+=5;addFeed("green","🏠 Full remote confirmed. Morale up. Nobody knows what anyone looks like.")}},
+      {text:"🤷 Hybrid — Make nobody happy (−small morale, neutral)",apply:s=>{s.morale-=3;addFeed("amber","Hybrid announced. Both sides unhappy. The true compromise.")}}
+    ]
+  },
+  {
+    title:"🔥 Your Landing Page Went Viral on HN",
+    text:"Someone posted your landing page on Hacker News and it hit #1. Traffic is 50x normal. Your servers are... not handling it. Comments are 60% constructive, 40% 'why not use htmx.'",
+    choices:[
+      {text:"🚀 Scale up immediately — Throw money at servers (+users, −cash)",apply:s=>{s.cash-=5000;s.users+=Math.floor(s.users*0.5);addFeed("green","🎉 Survived the HN hug of death! Users +50%. Servers held (barely).")}},
+      {text:"🔥 Let it crash — We'll get 'em next time (−users, −reputation)",apply:s=>{s.users+=Math.floor(s.users*0.05);addFeed("red","💀 Site crashed during HN peak. 'We gave it the hug of death' top comment. Minimal gains.")}},
+    ]
+  },
+  {
+    title:"😤 Key Customer Threatening to Churn",
+    text:"Your biggest enterprise customer ($5K MRR) just sent a 'we need to talk' email. They want features you don't have, a discount you can't afford, and a dedicated account manager (you don't have those either).",
+    choices:[
+      {text:"💸 Offer 30% discount — Keep them at all costs (−revenue, keep customer)",apply:s=>{s.mrr-=1500;addFeed("amber","💸 Gave big discount to keep the whale. Revenue takes a hit but they stay.")}},
+      {text:"🤝 Promise features — Buy time (+tech debt, keep for now)",apply:s=>{s.techDebt+=8;addFeed("amber","📝 Promised features we can't build yet. Clock is ticking.")}},
+      {text:"👋 Let them go — Focus on smaller customers (−MRR, +focus)",apply:s=>{s.mrr-=5000;s.users-=50;addFeed("red","👋 Lost the whale. -$5K MRR. But free from their Jira board at least.")}}
+    ]
+  },
+  {
+    title:"📊 Investor Wants Monthly Board Meetings",
+    text:"Your lead investor 'just wants more visibility.' Translation: they want monthly board meetings, weekly metrics emails, and a dashboard they'll check once per quarter.",
+    choices:[
+      {text:"✅ Accept — Play the game (+credibility with VCs, −time)",apply:s=>{s.vcCredibility=(s.vcCredibility||0)+15;s.morale-=3;addFeed("cyan","📊 Monthly board meetings set up. Credibility up, but that's 2 days/month gone.")}},
+      {text:"📧 Counter-offer — Quarterly updates only (neutral)",apply:s=>{addFeed("amber","Negotiated quarterly updates. Investor is 'okay with that for now.'")}}
+    ]
+  },
+  {
+    title:"📱 Someone Posted Your Salaries on Glassdoor",
+    text:"Anonymous reviews on Glassdoor just exposed everyone's salary. The PM who makes more than the senior engineer is very nervous. The Slack #random channel has gone suspiciously quiet.",
+    choices:[
+      {text:"💰 Transparency — Publish salary bands publicly (+morale for underpaid, −cash for raises)",apply:s=>{s.cash-=10000;s.morale+=10;addFeed("green","💰 Published salary bands. Gave raises to underpaid folks. Morale boosted.")}},
+      {text:"🤫 Ignore it — It'll blow over (−morale, risk of departures)",apply:s=>{s.morale-=12;if(Math.random()<0.25&&s.employees.length>1){let e=s.employees[Math.floor(Math.random()*s.employees.length)];s.employees=s.employees.filter(x=>x!==e);addFeed("red",`😤 ${e.name} left after the Glassdoor incident.`)}else{addFeed("amber","Glassdoor drama continues. Morale suffering.")}}}
+    ]
+  },
+  {
+    title:"🐛 Critical Bug in Production",
+    text:"Your biggest feature has a bug that makes it... do the opposite of what it should. Users are confused. Support tickets are flooding in. The engineer who wrote it is 'on vacation.'",
+    choices:[
+      {text:"🚨 All hands on deck — Fix it NOW (−productivity, fast fix)",apply:s=>{s.features.forEach(f=>{if(f.building)f.progress-=0.05});addFeed("green","🔧 Bug squashed! All-hands fire drill. Feature progress set back slightly.")}},
+      {text:"🤷 'It's a feature' — Rebrand it (risky but hilarious)",apply:s=>{if(Math.random()<0.5){s.users+=Math.floor(s.users*0.05);addFeed("green","😂 Users actually LIKED the bug behavior. We 'shipped' a new feature.")}else{s.users-=Math.floor(s.users*0.1);addFeed("red","💀 Users didn't buy it. 'Your product is broken' is trending. Lost 10% users.")}}}
+    ]
+  },
+  {
+    title:"🎪 Tech Conference Sponsorship Opportunity",
+    text:"SaaSConf 2024 wants you as a Gold Sponsor for $8K. You'll get a booth, a speaking slot, and unlimited exposure to people who already use 47 SaaS tools.",
+    choices:[
+      {text:"🎪 Sponsor it — Brand exposure (+users, −cash)",apply:s=>{s.cash-=8000;s.users+=Math.floor(s.users*0.12);addFeed("green","🎪 Conference was a hit! Users +12%. Got 500 business cards we'll never contact.")}},
+      {text:"❌ Too expensive — Save the cash (no effect)",apply:s=>{addFeed("amber","Skipped the conference. Budget preserved. FOMO intensifies.")}}
+    ]
+  },
+  {
+    title:"🤖 GPT Wrapper Accusation",
+    text:"A Twitter thread with 50K impressions just called your product 'literally just a GPT wrapper with a $49/mo price tag.' Your DMs are flooded. Your AI engineer is typing furiously.",
+    choices:[
+      {text:"🔬 Post technical deep-dive — Show the real tech (+credibility, +users)",apply:s=>{s.users+=Math.floor(s.users*0.1);s.vcCredibility=(s.vcCredibility||0)+5;addFeed("green","📝 Technical blog post went viral. 'They actually built something.' +10% users.")}},
+      {text:"🤫 Silence — Don't feed the trolls (small user loss)",apply:s=>{s.users-=Math.floor(s.users*0.03);addFeed("amber","Stayed silent. Narrative sticks a bit. Small user loss.")}},
+      {text:"🗡️ Clap back on Twitter — Start a beef (+viral, risky)",apply:s=>{if(Math.random()<0.5){s.users+=Math.floor(s.users*0.2);addFeed("green","🔥 Twitter beef went viral in your favor! Users +20%. Founder brand: edgy.")}else{s.users-=Math.floor(s.users*0.08);s.morale-=5;addFeed("red","💀 Clap back went badly. Memes were made. Users down 8%.")}}}
+    ]
+  },
+  {
+    title:"💡 Acqui-Hire Offer for Your Designer",
+    text:"A Big Tech company wants to acqui-hire your best designer. They're offering 3x their salary. The designer is 'just exploring options.' Their LinkedIn has been suspiciously active.",
+    choices:[
+      {text:"💰 Counter-offer — Raise + equity (+cash cost, keep employee)",apply:s=>{let d=s.employees.find(e=>e.role==="Designer");if(d){d.salary=Math.floor(d.salary*1.3);addFeed("green",`💰 Counter-offered ${d.name}. They're staying... for now. Salary up 30%.`)}else{addFeed("amber","No designer on staff to counter-offer. Crisis averted?")}}},
+      {text:"👋 Let them go — We'll find another (lose designer)",apply:s=>{let d=s.employees.findIndex(e=>e.role==="Designer");if(d>=0){addFeed("red",`👋 ${s.employees[d].name} left for Big Tech. 'It was a hard decision' (it was not).`);s.employees.splice(d,1)}else{addFeed("amber","No designer to lose. Dodged that bullet.")}}}
+    ]
+  },
+  {
+    title:"📦 Product Hunt Launch Day!",
+    text:"You just launched on Product Hunt! The upvotes are coming in. Your whole team is refreshing the page. Nobody is doing actual work. The founder is commenting on every single review.",
+    choices:[
+      {text:"🏆 Go all in — Rally the community (+big user boost, −1 day productivity)",apply:s=>{s.users+=Math.floor(s.users*0.35);addFeed("green","🏆 #3 on Product Hunt! Users +35%! The team is exhausted but euphoric.")}},
+      {text:"😎 Play it cool — It's just one channel (+small user boost)",apply:s=>{s.users+=Math.floor(s.users*0.1);addFeed("cyan","📦 Solid Product Hunt launch. +10% users. Didn't burn out the team.")}}
+    ]
+  },
+  {
+    title:"🧑‍⚖️ Patent Troll Incoming",
+    text:"A company called 'Innovation IP Holdings LLC' just sent a cease and desist. They claim to own a patent on 'using computers to display information on screens.' Legal fees are incoming.",
+    choices:[
+      {text:"⚖️ Fight it — Hire a lawyer (−$12K, resolved eventually)",apply:s=>{s.cash-=12000;addFeed("amber","⚖️ Lawyered up. -$12K. Patent troll will be dealt with in 6-12 months.")}},
+      {text:"💸 Settle — Pay them off (−$8K, immediate resolution)",apply:s=>{s.cash-=8000;addFeed("red","💸 Settled with the patent troll. -$8K. They'll be back.")}}
+    ]
+  },
+  {
+    title:"🎯 Inbound from Enterprise Whale",
+    text:"A Fortune 500 company wants a demo. They have 50,000 potential seats. But they want SOC 2 compliance, SSO, and a 6-month free pilot. Your sales team is hyperventilating.",
+    choices:[
+      {text:"🤝 Take the meeting — Play the long game (+pipeline, +tech debt for compliance)",apply:s=>{s.techDebt+=5;if(Math.random()<0.4){s.mrr+=10000;s.users+=500;addFeed("green","🐋 Enterprise whale CLOSED! +$10K MRR, +500 users! SOC 2 was worth it.")}else{addFeed("amber","Enterprise deal still in procurement limbo. 'We'll get back to you next quarter.'")}}},
+      {text:"❌ Too early for enterprise — Focus on SMB (stay focused)",apply:s=>{addFeed("cyan","Declined the enterprise meeting. Not ready yet. Focus on what works.")}}
+    ]
+  }
+];
+
+const BUBBLE_TEXTS = {
+  good:["Shipping feature! 🚀","In the zone 🔥","Closed a deal! 💰","PR merged! ✅","New blog post! ✍️","Crushing it 💪","Flow state ⚡","Tests passing! 🟢","Deployed! 🎉","Great standup! ☀️"],
+  bad:["Refactoring... again","LinkedIn posting 🙄","Browsing Reddit","Stack Overflow copy-paste","In a meeting 😴","Debugging CSS","Waiting for review","Slack drama 🍿","Merge conflict 😡","Build broken 🔴"],
+  meh:["Writing tests 😐","On a 'strategy call'","Reading docs","Coffee break ☕","Standup monologue","Updating Jira","1-on-1 meeting","Code review","Sprint planning","Figma rabbit hole"]
+};
+
+const AMENITIES = [
+  {emoji:"☕",label:"Kombucha Bar"},{emoji:"🏓",label:"Ping Pong"},{emoji:"🛋️",label:"Nap Pod"},
+  {emoji:"🧘",label:"Meditation"},{emoji:"🎮",label:"Game Room"},{emoji:"🌱",label:"Plant Wall"},
+  {emoji:"🍕",label:"Snack Bar"},{emoji:"📚",label:"Library"}
+];
+
+const TECH_DEBT_QUIPS = [
+  "Move fast and break things","We'll fix it later","It works, don't touch it",
+  "TODO: refactor this","Temporary fix since 2021","Legacy code (3 months old)",
+  "Tech debt is a feature","We'll refactor after Series B","Duct tape architecture",
+  "It's not a bug, it's a feature","Held together by prayers","The intern wrote this"
+];
+
+// ─── GAME STATE ───
+let G = {};
+let gameLoop = null;
+let tickAccumulator = 0;
+let activePanel = null;
+let currentVCState = null;
+
+function initState() {
+  const prefix = COMPANY_PREFIXES[Math.floor(Math.random()*COMPANY_PREFIXES.length)];
+  const suffix = COMPANY_SUFFIXES[Math.floor(Math.random()*COMPANY_SUFFIXES.length)];
+  const tagline = COMPANY_TAGLINES[Math.floor(Math.random()*COMPANY_TAGLINES.length)];
+
+  G = {
+    companyName: prefix + suffix,
+    tagline: tagline,
+    month: 1,
+    cash: 150000,
+    mrr: 2000,
+    users: 120,
+    churn: 5,
+    valuation: 800000,
+    techDebt: 5,
+    morale: 75,
+    speed: 1,
+    paused: false,
+    employees: [],
+    features: [],
+    featurePool: JSON.parse(JSON.stringify(FEATURE_POOL)).sort(()=>Math.random()-0.5),
+    history: {mrr:[],users:[],burn:[],cash:[]},
+    pivotCooldown: 0,
+    dilution: 0,
+    vcCredibility: 50,
+    totalFundraised: 0,
+    monthsSinceEvent: 0,
+    hiredCount: 0,
+    featuresShipped: 0,
+    pivotsCount: 0,
+    gameOver: false,
+    gameWon: false,
+    feedItems: []
+  };
+
+  // Start with 2 employees
+  G.employees.push(generateEmployee("Engineer"));
+  G.employees.push(generateEmployee("Sales"));
+}
+
+// ─── GENERATORS ───
+function generateName() {
+  const first = FIRST_NAMES[Math.floor(Math.random()*FIRST_NAMES.length)];
+  const last = LAST_NAMES[Math.floor(Math.random()*LAST_NAMES.length)];
+  const nick = Math.random() < 0.4 ? " " + NICKNAMES[Math.floor(Math.random()*NICKNAMES.length)] + " " : " ";
+  return first + nick + last;
+}
+
+function generateEmployee(role) {
+  role = role || ROLES[Math.floor(Math.random()*ROLES.length)];
+  const name = generateName();
+  const salary = Math.floor((5000 + Math.random() * 15000) / 1000) * 1000;
+  const skills = {
+    coding: Math.floor(20 + Math.random() * 80),
+    speed: Math.floor(20 + Math.random() * 80),
+    creativity: Math.floor(20 + Math.random() * 80),
+    teamwork: Math.floor(20 + Math.random() * 80)
+  };
+  if (role === "Engineer") { skills.coding += 20; skills.coding = Math.min(99, skills.coding); }
+  if (role === "Designer") { skills.creativity += 20; skills.creativity = Math.min(99, skills.creativity); }
+  if (role === "Sales" || role === "Growth Hacker") { skills.teamwork += 15; skills.teamwork = Math.min(99, skills.teamwork); }
+
+  const numTraits = 2 + Math.floor(Math.random() * 2);
+  const shuffled = [...TRAITS].sort(() => Math.random() - 0.5);
+  const traits = shuffled.slice(0, numTraits);
+
+  const roleBios = BIOS[role] || BIOS["Engineer"];
+  const bio = roleBios[Math.floor(Math.random() * roleBios.length)];
+
+  const emoji = Math.random() < 0.5 ? ROLE_EMOJIS[role] : (ROLE_EMOJIS_ALT[role] || ROLE_EMOJIS[role]);
+
+  return { name, role, salary, skills, traits, bio, emoji, assignedFeature: null, bubbleText: "", bubbleClass: "bubble-meh" };
+}
+
+function generateCandidates() {
+  const count = 3 + Math.floor(Math.random() * 2);
+  const candidates = [];
+  const roles = [...ROLES].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count; i++) {
+    candidates.push(generateEmployee(roles[i % roles.length]));
+  }
+  return candidates;
+}
+
+// ─── UTILITY ───
+function fmt(n) {
+  if (n >= 1000000) return "$" + (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000) return "$" + (n / 1000).toFixed(1) + "K";
+  return "$" + n.toFixed(0);
+}
+
+function fmtInt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + "M";
+  if (n >= 1000) return (n/1000).toFixed(1) + "K";
+  return n.toString();
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function skillColor(v) {
+  if (v >= 70) return "var(--green)";
+  if (v >= 40) return "var(--amber)";
+  return "var(--red)";
+}
+
+// ─── FEED ───
+function addFeed(type, text) {
+  G.feedItems.unshift({ type, text, time: G.month });
+  if (G.feedItems.length > 30) G.feedItems.length = 30;
+  renderFeed();
+}
+
+function renderFeed() {
+  const el = document.getElementById("feedList");
+  el.innerHTML = G.feedItems.map(f =>
+    `<div class="feed-item feed-${f.type}"><strong>Month ${f.time}</strong>${f.text}</div>`
+  ).join("");
+}
+
+// ─── HUD ───
+function updateHUD() {
+  document.getElementById("companyName").textContent = "🚀 " + G.companyName;
+  document.getElementById("hudMRR").textContent = fmt(G.mrr);
+  document.getElementById("hudUsers").textContent = fmtInt(G.users);
+  document.getElementById("hudChurn").textContent = G.churn.toFixed(1) + "%";
+  document.getElementById("hudValuation").textContent = fmt(G.valuation);
+
+  const burn = getBurnRate();
+  document.getElementById("hudBurn").textContent = (burn >= 0 ? "+" : "-") + fmt(Math.abs(burn)) + "/mo";
+
+  const runwayMonths = burn < 0 ? Math.floor(G.cash / Math.abs(burn)) : 999;
+  const runwayEl = document.getElementById("hudRunway");
+  if (runwayMonths > 24) {
+    runwayEl.textContent = "🟢 RUNWAY: 24+ MO";
+    runwayEl.className = "runway-badge ok";
+  } else if (runwayMonths > 6) {
+    runwayEl.textContent = "⚡ RUNWAY: " + runwayMonths + " MO";
+    runwayEl.className = "runway-badge warn";
+  } else {
+    runwayEl.textContent = "🔥 RUNWAY: " + runwayMonths + " MO";
+    runwayEl.className = "runway-badge";
+  }
+
+  document.getElementById("monthDisplay").textContent = "Month " + G.month;
+
+  // Churn color
+  const churnWrap = document.getElementById("hudChurnWrap");
+  churnWrap.className = "metric" + (G.churn > 10 ? " bad" : G.churn > 5 ? " warn" : "");
+
+  // Tech debt
+  const tdPct = Math.min(100, Math.max(0, G.techDebt));
+  document.getElementById("techDebtFill").style.width = tdPct + "%";
+  const quip = TECH_DEBT_QUIPS[Math.floor(tdPct / (100/TECH_DEBT_QUIPS.length))] || TECH_DEBT_QUIPS[TECH_DEBT_QUIPS.length-1];
+  document.getElementById("techDebtText").textContent = Math.round(tdPct) + "% — \"" + quip + "\"";
+}
+
+function getBurnRate() {
+  const expenses = G.employees.reduce((s, e) => s + e.salary, 0);
+  const overhead = 2000 + G.employees.length * 500; // rent, tools, etc
+  return G.mrr - expenses - overhead;
+}
+
+// ─── OFFICE VIEW ───
+function renderOffice() {
+  const office = document.getElementById("officeView");
+  // Remove old desks and amenities, keep tech debt bar
+  office.querySelectorAll(".desk,.amenity").forEach(el => el.remove());
+
+  const startX = 30;
+  const startY = 30;
+  const cols = 6;
+
+  G.employees.forEach((emp, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = startX + col * 105;
+    const y = startY + row * 90;
+
+    // Pick bubble text
+    if (Math.random() < 0.3 || !emp.bubbleText) {
+      const type = Math.random();
+      if (type < 0.4) { emp.bubbleText = pick(BUBBLE_TEXTS.good); emp.bubbleClass = "bubble-good"; }
+      else if (type < 0.7) { emp.bubbleText = pick(BUBBLE_TEXTS.meh); emp.bubbleClass = "bubble-meh"; }
+      else { emp.bubbleText = pick(BUBBLE_TEXTS.bad); emp.bubbleClass = "bubble-bad"; }
+    }
+
+    const desk = document.createElement("div");
+    desk.className = "desk";
+    desk.style.top = y + "px";
+    desk.style.left = x + "px";
+    desk.innerHTML = `
+      <div class="bubble ${emp.bubbleClass}">${emp.bubbleText}</div>
+      <div class="emoji">${emp.emoji}</div>
+      <div class="name">${emp.name.split(" ")[0]}</div>
+      <div class="role">${emp.role}</div>
+    `;
+    office.appendChild(desk);
+  });
+
+  // Amenities row
+  const amenityY = Math.max(300, 30 + (Math.ceil(G.employees.length / cols) + 1) * 90);
+  const numAmenities = Math.min(AMENITIES.length, 2 + Math.floor(G.employees.length / 3));
+  for (let i = 0; i < numAmenities; i++) {
+    const a = AMENITIES[i];
+    const el = document.createElement("div");
+    el.className = "amenity";
+    el.style.top = amenityY + "px";
+    el.style.left = (startX + i * 80) + "px";
+    el.innerHTML = `<div class="emoji">${a.emoji}</div><div class="label">${a.label}</div>`;
+    office.appendChild(el);
+  }
+}
+
+// ─── PANELS ───
+function togglePanel(name) {
+  if (activePanel === name) {
+    closePanel();
+    return;
+  }
+  closePanel();
+  activePanel = name;
+
+  if (name === "hire") renderHirePanel();
+  else if (name === "product") renderProductPanel();
+  else if (name === "fundraise") renderFundraisePanel();
+  else if (name === "metrics") renderMetricsPanel();
+
+  document.getElementById(name + "Panel").classList.add("open");
+}
+
+function closePanel() {
+  document.querySelectorAll(".slide-panel").forEach(p => p.classList.remove("open"));
+  activePanel = null;
+}
+
+// ─── HIRE PANEL ───
+let currentCandidates = [];
+function renderHirePanel() {
+  currentCandidates = generateCandidates();
+  const el = document.getElementById("hireCandidates");
+  el.innerHTML = `<div style="font-size:11px;color:#888;margin-bottom:10px;">
+    👥 Team: ${G.employees.length} • Monthly Payroll: ${fmt(G.employees.reduce((s,e)=>s+e.salary,0))}
+    • <span style="color:var(--amber)">Morale: ${G.morale}%</span>
+  </div>` + currentCandidates.map((c, i) => `
+    <div class="candidate-card">
+      <div class="cand-avatar" style="background:linear-gradient(135deg,hsl(${(i*80+120)%360},30%,25%),hsl(${(i*80+120)%360},30%,15%));">
+        ${c.emoji}
+      </div>
+      <div class="cand-info">
+        <div class="cand-name">${c.name}</div>
+        <div class="cand-role">${c.role}</div>
+        <div class="cand-bio">${c.bio}</div>
+        <div class="cand-traits">
+          ${c.traits.map(t => `<span class="trait trait-${t.type}">${t.name}</span>`).join("")}
+        </div>
+        <div style="margin-top:6px;">
+          ${Object.entries(c.skills).map(([k,v]) => `
+            <div class="skill-row">
+              <div class="skill-name">${k}</div>
+              <div class="skill-track"><div class="skill-fill" style="width:${v}%;background:${skillColor(v)}"></div></div>
+            </div>
+          `).join("")}
+        </div>
+        <div class="cand-actions">
+          <button class="cand-btn btn-hire" onclick="hireCandidate(${i})">Hire ✅</button>
+          <button class="cand-btn btn-pass" onclick="passCandidate(${i})">Pass ❌</button>
+        </div>
+      </div>
+      <div class="cand-salary">${fmt(c.salary)}/mo</div>
+    </div>
+  `).join("");
+}
+
+function hireCandidate(i) {
+  const c = currentCandidates[i];
+  if (!c) return;
+  G.employees.push({...c, assignedFeature: null, bubbleText: "", bubbleClass: "bubble-good"});
+  G.hiredCount++;
+  addFeed("green", `✅ Hired ${c.name} as ${c.role}! Salary: ${fmt(c.salary)}/mo`);
+  currentCandidates.splice(i, 1);
+  renderHirePanel();
+  renderOffice();
+  updateHUD();
+}
+
+function passCandidate(i) {
+  currentCandidates.splice(i, 1);
+  if (currentCandidates.length === 0) currentCandidates = generateCandidates();
+  renderHirePanel();
+}
+
+// ─── PRODUCT PANEL ───
+function renderProductPanel() {
+  const engineers = G.employees.filter(e => e.role === "Engineer" && !e.assignedFeature);
+  const el = document.getElementById("productList");
+
+  // Show available features
+  const available = G.featurePool.filter(f => !f.building && !f.complete).slice(0, 8);
+  const building = G.features.filter(f => f.building && !f.complete);
+  const complete = G.features.filter(f => f.complete);
+
+  let html = `<div style="font-size:11px;color:#888;margin-bottom:10px;">
+    🔧 Available Engineers: ${engineers.length} / ${G.employees.filter(e=>e.role==="Engineer").length}
+  </div>`;
+
+  if (building.length > 0) {
+    html += `<div style="font-size:13px;font-weight:bold;color:var(--cyan);margin:10px 0 6px;">🔨 In Progress</div>`;
+    building.forEach(f => {
+      const pct = Math.round(f.progress * 100);
+      html += `
+        <div class="feature-card building">
+          <div class="feat-header">
+            <div class="feat-name">${f.name}</div>
+            <div class="feat-impact">${pct}%</div>
+          </div>
+          <div class="feat-meta">
+            <span>⏱ ${f.months}mo</span>
+            <span>💰 +${fmt(f.mrrImpact)} MRR</span>
+            <span>🔧 ${f.techDebt > 0 ? "+" : ""}${f.techDebt}% debt</span>
+          </div>
+          <div class="feat-progress-track"><div class="feat-progress-fill" style="width:${pct}%"></div></div>
+          <div class="feat-assigned">👨‍💻 ${f.assignedTo || "Auto"}</div>
+        </div>`;
+    });
+  }
+
+  if (available.length > 0) {
+    html += `<div style="font-size:13px;font-weight:bold;color:var(--amber);margin:10px 0 6px;">📋 Available to Build</div>`;
+    available.forEach((f, i) => {
+      const canBuild = engineers.length > 0;
+      html += `
+        <div class="feature-card">
+          <div class="feat-header">
+            <div class="feat-name">${f.name}</div>
+            <div class="feat-impact">+${fmt(f.mrrImpact)} MRR</div>
+          </div>
+          <div class="feat-meta">
+            <span>⏱ ${f.months} month${f.months>1?"s":""}</span>
+            <span>🔧 ${f.techDebt > 0 ? "+" : ""}${f.techDebt}% debt</span>
+          </div>
+          <div style="font-size:10px;color:#888;margin-bottom:6px;">${f.desc}</div>
+          <span class="feat-assign ${canBuild ? "" : "disabled"}" onclick="${canBuild ? `startFeature(${i})` : ""}">
+            ${canBuild ? "🔨 Start Building" : "❌ No Engineers Available"}
+          </span>
+        </div>`;
+    });
+  }
+
+  if (complete.length > 0) {
+    html += `<div style="font-size:13px;font-weight:bold;color:var(--green);margin:10px 0 6px;">✅ Shipped</div>`;
+    complete.forEach(f => {
+      html += `<div class="feature-card complete">
+        <div class="feat-name">${f.name} ✅</div>
+        <div class="feat-meta"><span>💰 +${fmt(f.mrrImpact)} MRR</span></div>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function startFeature(poolIndex) {
+  const available = G.featurePool.filter(f => !f.building && !f.complete);
+  const feature = available[poolIndex];
+  if (!feature) return;
+
+  const engineer = G.employees.find(e => e.role === "Engineer" && !e.assignedFeature);
+  if (!engineer) return;
+
+  feature.building = true;
+  feature.progress = 0;
+  feature.complete = false;
+  feature.assignedTo = engineer.name;
+  engineer.assignedFeature = feature.name;
+  G.features.push(feature);
+
+  addFeed("cyan", `🔨 Started building "${feature.name}" — ${engineer.name} is on it.`);
+  renderProductPanel();
+}
+
+// ─── FUNDRAISE PANEL ───
+function renderFundraisePanel() {
+  currentVCState = null;
+  const el = document.getElementById("fundraiseContent");
+
+  const arr = G.mrr * 12;
+  const round = arr < 100000 ? "Pre-Seed" : arr < 500000 ? "Seed" : arr < 2000000 ? "Series A" : "Series B";
+  const askAmount = Math.max(100000, Math.floor(G.valuation * 0.25 / 10000) * 10000);
+
+  let html = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:bold;color:var(--amber);margin-bottom:8px;">📊 Your Metrics</div>
+      <div class="metric-summary">
+        <div class="metric-box"><div class="val" style="color:var(--green)">${fmt(G.mrr)}</div><div class="lbl">MRR</div></div>
+        <div class="metric-box"><div class="val" style="color:var(--cyan)">${fmt(arr)}</div><div class="lbl">ARR</div></div>
+        <div class="metric-box"><div class="val" style="color:var(--amber)">${fmtInt(G.users)}</div><div class="lbl">Users</div></div>
+        <div class="metric-box"><div class="val" style="color:${G.churn>8?'var(--red)':'var(--amber)'}">${G.churn.toFixed(1)}%</div><div class="lbl">Churn</div></div>
+      </div>
+      <div style="font-size:11px;color:#888;text-align:center;">
+        Stage: <strong style="color:var(--cyan)">${round}</strong> •
+        Dilution so far: <strong style="color:var(--amber)">${G.dilution}%</strong> •
+        Ask: <strong style="color:var(--green)">${fmt(askAmount)}</strong>
+      </div>
+    </div>
+    <button class="cand-btn btn-hire" style="width:100%;margin-bottom:16px;" onclick="generateVCPitch()">
+      🤙 Find a VC to Pitch
+    </button>
+    <div id="vcPitchArea"></div>
+  `;
+  el.innerHTML = html;
+}
+
+function generateVCPitch() {
+  const vc = pick(VC_FIRMS);
+  const vcName = generateName().split(" ")[0] + " " + pick(["Capital","Ventures","Partners","Fund"]);
+  const question = pick(VC_QUESTIONS);
+  const arr = G.mrr * 12;
+  const askAmount = Math.max(100000, Math.floor(G.valuation * 0.25 / 10000) * 10000);
+  const preMoneyVal = G.valuation;
+  const dilutionPct = Math.round((askAmount / (preMoneyVal + askAmount)) * 100);
+
+  // Base success chance
+  let successChance = 30;
+  if (arr > 500000) successChance += 20;
+  if (arr > 100000) successChance += 10;
+  if (G.users > 1000) successChance += 10;
+  if (G.churn < 5) successChance += 10;
+  if ((G.vcCredibility || 50) > 60) successChance += 10;
+  successChance = Math.min(85, Math.max(15, successChance));
+
+  currentVCState = { vc, vcName, question, askAmount, preMoneyVal, dilutionPct, successChance, answered: false };
+
+  const area = document.getElementById("vcPitchArea");
+  area.innerHTML = `
+    <div class="vc-card">
+      <div class="vc-header">
+        <div class="vc-avatar" style="background:linear-gradient(135deg,hsl(${Math.random()*360},30%,25%),hsl(${Math.random()*360},30%,15%))">
+          ${vc.emoji}
+        </div>
+        <div>
+          <div class="vc-name">${vcName}</div>
+          <div class="vc-firm">${vc.name} • ${pick(["Partner","Managing Director","Principal","GP"])}</div>
+          <div class="vc-offer" style="margin-top:4px;">
+            Offering <strong style="color:var(--green)">${fmt(askAmount)}</strong> at
+            <strong style="color:var(--amber)">${fmt(preMoneyVal)}</strong> pre-money
+            (${dilutionPct}% dilution)
+          </div>
+        </div>
+      </div>
+      <div class="vc-question">
+        <div class="vc-q-title">❓ ${vcName.split(" ")[0]} asks:</div>
+        <div class="vc-q-text">"${question.q}"</div>
+        ${question.answers.map((a, i) => `
+          <div class="vc-answer" onclick="answerVC(${i})">${a.text}</div>
+        `).join("")}
+      </div>
+      <div id="vcResultArea"></div>
+    </div>
+  `;
+}
+
+function answerVC(answerIdx) {
+  if (!currentVCState || currentVCState.answered) return;
+  currentVCState.answered = true;
+
+  const answer = currentVCState.question.answers[answerIdx];
+  let chance = currentVCState.successChance;
+  if (answer.good) chance += 20;
+  else chance -= 15;
+
+  const success = Math.random() * 100 < chance;
+  const resultEl = document.getElementById("vcResultArea");
+
+  if (success) {
+    G.cash += currentVCState.askAmount;
+    G.dilution += currentVCState.dilutionPct;
+    G.totalFundraised += currentVCState.askAmount;
+    G.valuation = Math.floor(G.valuation * (1.5 + Math.random()));
+    addFeed("green", `🎉 Raised ${fmt(currentVCState.askAmount)} from ${currentVCState.vc.name}! Valuation: ${fmt(G.valuation)}`);
+    resultEl.innerHTML = `<div class="vc-result success">
+      🎉 FUNDED! +${fmt(currentVCState.askAmount)} in the bank!<br>
+      <span style="font-size:11px;font-weight:normal;">Dilution: ${currentVCState.dilutionPct}% • New valuation: ${fmt(G.valuation)}</span>
+    </div>`;
+  } else {
+    addFeed("red", `😬 ${currentVCState.vc.name} passed. "We'll circle back."`);
+    resultEl.innerHTML = `<div class="vc-result fail">
+      😬 "We'll circle back."<br>
+      <span style="font-size:11px;font-weight:normal;">${pick([
+        "They ghosted you after the meeting.",
+        "They said 'interesting' 14 times. That's never good.",
+        "The partner fell asleep during your demo.",
+        "They asked if you'd considered 'a real business model.'",
+        "They liked it but 'the timing isn't right.'",
+        "They want to see 'more traction.' Always more traction."
+      ])}</span>
+    </div>`;
+  }
+
+  updateHUD();
+}
+
+// ─── METRICS PANEL ───
+function renderMetricsPanel() {
+  const el = document.getElementById("metricsContent");
+  const h = G.history;
+  const maxMRR = Math.max(1, ...h.mrr);
+  const maxUsers = Math.max(1, ...h.users);
+  const maxBurn = Math.max(1, ...h.burn.map(Math.abs));
+  const maxCash = Math.max(1, ...h.cash);
+
+  function barChart(data, maxVal, color, label) {
+    const last12 = data.slice(-18);
+    if (last12.length === 0) return `<div style="color:#666;font-size:11px;padding:20px;">No data yet. Play a few months!</div>`;
+    const localMax = Math.max(1, ...last12.map(Math.abs));
+    return `
+      <div class="chart-container">
+        <div class="chart-title">${label}</div>
+        <div class="bar-chart">
+          ${last12.map((v, i) => {
+            const h = Math.max(2, Math.abs(v) / localMax * 90);
+            const c = v < 0 ? "var(--red)" : color;
+            return `<div class="bar-col"><div class="bar" style="height:${h}px;background:${c}"></div><div class="bar-label">${i + Math.max(1, data.length - 17)}</div></div>`;
+          }).join("")}
+        </div>
+        <div class="chart-axis"></div>
+      </div>
+    `;
+  }
+
+  const arr = G.mrr * 12;
+  el.innerHTML = `
+    <div class="metric-summary">
+      <div class="metric-box"><div class="val" style="color:var(--green)">${fmt(arr)}</div><div class="lbl">ARR</div></div>
+      <div class="metric-box"><div class="val" style="color:var(--cyan)">${fmt(G.cash)}</div><div class="lbl">Cash</div></div>
+      <div class="metric-box"><div class="val" style="color:var(--amber)">${G.employees.length}</div><div class="lbl">Team</div></div>
+      <div class="metric-box"><div class="val" style="color:var(--green)">${G.featuresShipped}</div><div class="lbl">Shipped</div></div>
+    </div>
+    ${barChart(h.mrr, maxMRR, "var(--green)", "📈 MRR History")}
+    ${barChart(h.users, maxUsers, "var(--cyan)", "👥 User Growth")}
+    ${barChart(h.burn, maxBurn, "var(--amber)", "🔥 Net Burn Rate")}
+    ${barChart(h.cash, maxCash, "var(--green)", "💰 Cash Balance")}
+    <div style="font-size:10px;color:#666;margin-top:10px;">
+      Total Fundraised: ${fmt(G.totalFundraised)} • Dilution: ${G.dilution}% •
+      Hires: ${G.hiredCount} • Pivots: ${G.pivotsCount}
+    </div>
+  `;
+}
+
+// ─── PIVOT ───
+function doPivot() {
+  if (G.pivotCooldown > 0 || G.paused || G.gameOver) return;
+
+  const pivot = pick(PIVOT_TYPES);
+  G.pivotCooldown = 3;
+  G.pivotsCount++;
+
+  // Reset feature progress 50%
+  G.features.forEach(f => {
+    if (f.building && !f.complete) f.progress *= 0.5;
+  });
+
+  // Random metric changes
+  G.users = Math.floor(G.users * (0.8 + Math.random() * 0.4));
+  G.valuation = Math.floor(G.valuation * (0.7 + Math.random() * 0.8));
+  G.morale -= 10;
+  G.techDebt += 5;
+
+  // Update company tagline
+  G.tagline = pivot.text;
+
+  addFeed("amber", `🔄 PIVOT! ${pivot.text} Feature progress reset 50%. Valuation recalculated.`);
+
+  showEventModal({
+    title: "🔄 PIVOT!",
+    text: `${pivot.text}<br><br>The team is confused but cautiously optimistic. Your investors are "supportive" (read: panicking). Feature progress has been reset 50%.`,
+    choices: [{
+      text: "🚀 Let's go!",
+      apply: () => {}
+    }]
+  });
+
+  updateHUD();
+  renderOffice();
+  updatePivotButton();
+}
+
+function updatePivotButton() {
+  const btn = document.getElementById("pivotBtn");
+  if (G.pivotCooldown > 0) {
+    btn.classList.add("cooldown");
+    btn.innerHTML = `<span class="ico">🔄</span> PIVOT (${G.pivotCooldown}mo)`;
+  } else {
+    btn.classList.remove("cooldown");
+    btn.innerHTML = `<span class="ico">🔄</span> PIVOT!`;
+  }
+}
+
+// ─── EVENTS ───
+function showEventModal(event) {
+  G.paused = true;
+  const modal = document.getElementById("eventModal");
+  modal.style.display = "flex";
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">${event.title}</div>
+      <div class="modal-text">${event.text}</div>
+      <div class="modal-choices">
+        ${event.choices.map((c, i) => `
+          <div class="modal-choice" onclick="resolveEvent(${i})">${c.text}</div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  window._currentEvent = event;
+}
+
+function resolveEvent(choiceIdx) {
+  const event = window._currentEvent;
+  if (!event) return;
+
+  const choice = event.choices[choiceIdx];
+  if (choice.apply) choice.apply(G);
+
+  document.getElementById("eventModal").style.display = "none";
+  G.paused = false;
+  window._currentEvent = null;
+
+  G.morale = Math.max(0, Math.min(100, G.morale));
+  G.techDebt = Math.max(0, Math.min(100, G.techDebt));
+  updateHUD();
+  renderOffice();
+}
+
+function maybeFireEvent() {
+  G.monthsSinceEvent++;
+  if (G.monthsSinceEvent < 2) { if (Math.random() > 0.3) return; }
+  if (G.monthsSinceEvent >= 3 || Math.random() < 0.6) {
+    const event = pick(EVENTS);
+    G.monthsSinceEvent = 0;
+    showEventModal(event);
+  }
+}
+
+// ─── GAME LOOP ───
+function monthTick() {
+  if (G.gameOver) return;
+
+  // ─ Revenue
+  const churnLoss = Math.floor(G.users * (G.churn / 100));
+  const organicGrowth = Math.floor(G.users * (0.02 + Math.random() * 0.05));
+  const marketingBoost = G.employees.filter(e => e.role === "Growth Hacker" || e.role === "Sales" || e.role === "DevRel").length;
+  const newUsers = organicGrowth + marketingBoost * Math.floor(5 + Math.random() * 20);
+  G.users = Math.max(0, G.users - churnLoss + newUsers);
+
+  // ARPU scales with features shipped
+  const arpu = 2 + G.featuresShipped * 0.5 + Math.random();
+  G.mrr = Math.floor(G.users * arpu);
+
+  // ─ Feature progress
+  G.features.forEach(f => {
+    if (f.building && !f.complete) {
+      const engineer = G.employees.find(e => e.assignedFeature === f.name);
+      if (engineer) {
+        const speed = (engineer.skills.coding + engineer.skills.speed) / 200;
+        const moraleMultiplier = G.morale / 100;
+        const debtPenalty = Math.max(0.3, 1 - G.techDebt / 200);
+        f.progress += (1 / f.months) * speed * moraleMultiplier * debtPenalty;
+      }
+      if (f.progress >= 1) {
+        f.complete = true;
+        f.building = false;
+        G.mrr += f.mrrImpact;
+        G.techDebt = Math.max(0, Math.min(100, G.techDebt + f.techDebt));
+        G.featuresShipped++;
+        const eng = G.employees.find(e => e.assignedFeature === f.name);
+        if (eng) eng.assignedFeature = null;
+        addFeed("green", `🚀 Shipped "${f.name}"! +${fmt(f.mrrImpact)} MRR.`);
+      }
+    }
+  });
+
+  // ─ Expenses
+  const burn = getBurnRate();
+  G.cash += burn;
+
+  // ─ Churn fluctuation
+  G.churn = Math.max(1, Math.min(20, G.churn + (Math.random() - 0.5) * 1.5));
+  if (G.morale < 40) G.churn += 0.5;
+  if (G.techDebt > 60) G.churn += 0.3;
+
+  // ─ Valuation (absurdly disconnected from reality)
+  const revenueMultiple = 20 + Math.random() * 80; // Because why not
+  G.valuation = Math.max(G.valuation, Math.floor(G.mrr * 12 * revenueMultiple / 10) * 10);
+  if (G.pivotsCount > 0) G.valuation = Math.floor(G.valuation * 1.1); // pivots increase valuation obviously
+
+  // ─ Morale drift
+  if (burn > 0) G.morale = Math.min(100, G.morale + 1);
+  if (G.cash < 50000) G.morale = Math.max(0, G.morale - 2);
+  G.morale = Math.max(0, Math.min(100, G.morale + (Math.random() - 0.5) * 3));
+
+  // ─ Tech debt natural growth
+  G.techDebt = Math.min(100, G.techDebt + 0.5 + G.employees.filter(e=>e.role==="Engineer").length * 0.2);
+
+  // ─ Record history
+  G.history.mrr.push(G.mrr);
+  G.history.users.push(G.users);
+  G.history.burn.push(burn);
+  G.history.cash.push(G.cash);
+
+  // ─ Pivot cooldown
+  if (G.pivotCooldown > 0) G.pivotCooldown--;
+  updatePivotButton();
+
+  G.month++;
+
+  // ─ Events
+  maybeFireEvent();
+
+  // ─ Check win/lose
+  if (G.cash <= 0) {
+    G.gameOver = true;
+    showEndScreen(false);
+    return;
+  }
+
+  const arr = G.mrr * 12;
+  if (arr >= 1000000) {
+    G.gameOver = true;
+    G.gameWon = true;
+    showEndScreen(true, "arr");
+    return;
+  }
+
+  // Random acquisition offer at high valuation
+  if (G.valuation > 5000000 && G.month > 12 && Math.random() < 0.15) {
+    G.gameOver = true;
+    G.gameWon = true;
+    showEndScreen(true, "acquisition");
+    return;
+  }
+
+  updateHUD();
+  renderOffice();
+  if (activePanel === "product") renderProductPanel();
+  if (activePanel === "metrics") renderMetricsPanel();
+}
+
+// ─── SPEED ───
+function setSpeed(s) {
+  document.querySelectorAll(".speed-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("spd" + s).classList.add("active");
+
+  if (s === 0) {
+    G.paused = true;
+    G.speed = 0;
+  } else {
+    G.paused = false;
+    G.speed = s;
+  }
+}
+
+// ─── END SCREEN ───
+function showEndScreen(won, reason) {
+  const el = document.getElementById("endScreen");
+  el.style.display = "flex";
+
+  if (won) {
+    const reasonText = reason === "arr" ?
+      "🎉 You reached $1M ARR! IPO when?" :
+      `🏆 Acquired for ${fmt(G.valuation * 2)}! Time to start another one.`;
+
+    el.innerHTML = `
+      <div class="endscreen">
+        <h1 style="color:var(--green);">🎉 YOU WIN!</h1>
+        <div class="subtitle">${reasonText}</div>
+        <div class="stats">
+          <div class="stat-box"><div class="val">${fmt(G.mrr * 12)}</div><div class="lbl">Final ARR</div></div>
+          <div class="stat-box"><div class="val">${fmtInt(G.users)}</div><div class="lbl">Users</div></div>
+          <div class="stat-box"><div class="val">${fmt(G.valuation)}</div><div class="lbl">Valuation</div></div>
+          <div class="stat-box"><div class="val">${G.employees.length}</div><div class="lbl">Team Size</div></div>
+          <div class="stat-box"><div class="val">${G.month}</div><div class="lbl">Months</div></div>
+          <div class="stat-box"><div class="val">${G.featuresShipped}</div><div class="lbl">Features Shipped</div></div>
+          <div class="stat-box"><div class="val">${fmt(G.totalFundraised)}</div><div class="lbl">Total Raised</div></div>
+          <div class="stat-box"><div class="val">${G.dilution}%</div><div class="lbl">Dilution</div></div>
+          <div class="stat-box"><div class="val">${G.pivotsCount}</div><div class="lbl">Pivots</div></div>
+        </div>
+        <button class="restart-btn" onclick="restart()">🔄 Start Another Startup</button>
+      </div>
+    `;
+    spawnConfetti();
+  } else {
+    el.innerHTML = `
+      <div class="endscreen">
+        <h1 style="color:var(--red);animation:burnPulse 1.5s infinite;">💀 GAME OVER</h1>
+        <div class="subtitle">You ran out of runway. Your ping pong table is being repossessed.</div>
+        <div class="stats">
+          <div class="stat-box"><div class="val">${fmt(G.mrr * 12)}</div><div class="lbl">Final ARR</div></div>
+          <div class="stat-box"><div class="val">${fmtInt(G.users)}</div><div class="lbl">Users</div></div>
+          <div class="stat-box"><div class="val">${fmt(G.valuation)}</div><div class="lbl">"Valuation"</div></div>
+          <div class="stat-box"><div class="val">${G.employees.length}</div><div class="lbl">Unemployed Team</div></div>
+          <div class="stat-box"><div class="val">${G.month}</div><div class="lbl">Months Survived</div></div>
+          <div class="stat-box"><div class="val">${Math.round(G.techDebt)}%</div><div class="lbl">Tech Debt (RIP)</div></div>
+          <div class="stat-box"><div class="val">${fmt(G.totalFundraised)}</div><div class="lbl">Burned Through</div></div>
+          <div class="stat-box"><div class="val">${G.dilution}%</div><div class="lbl">Dilution (moot)</div></div>
+          <div class="stat-box"><div class="val">${G.pivotsCount}</div><div class="lbl">Pivots</div></div>
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:16px;font-style:italic;">
+          "${pick([
+            "In startup heaven, the ping pong tables play themselves.",
+            "Your investors will add this to their 'portfolio learnings' slide.",
+            "At least the office plants survived. Wait, no they didn't.",
+            "Your LinkedIn bio still says 'Founder & CEO.' Nobody has the heart to tell you.",
+            "The domain name was worth more than the company.",
+            "Somewhere, a VC is updating their 'anti-portfolio' page."
+          ])}"
+        </div>
+        <button class="restart-btn" onclick="restart()">🔄 Try Again (it's like a real founder)</button>
+      </div>
+    `;
+  }
+}
+
+function spawnConfetti() {
+  const colors = ["#00d4ff","#00ff88","#ffaa00","#ff4444","#ff88ff","#88ff88"];
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.top = -10 + "px";
+    el.style.background = pick(colors);
+    el.style.borderRadius = Math.random() > 0.5 ? "50%" : "0";
+    el.style.animationDelay = (Math.random() * 1.5) + "s";
+    el.style.animationDuration = (1.5 + Math.random() * 1.5) + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+function restart() {
+  document.getElementById("endScreen").style.display = "none";
+  document.getElementById("eventModal").style.display = "none";
+  closePanel();
+  initState();
+  updateHUD();
+  renderOffice();
+  renderFeed();
+  updatePivotButton();
+  addFeed("cyan", `🚀 Welcome to ${G.companyName}! ${G.tagline}. Let's disrupt something.`);
+}
+
+// ─── START ───
+function startGame() {
+  document.getElementById("startScreen").style.display = "none";
+  initState();
+  updateHUD();
+  renderOffice();
+  addFeed("cyan", `🚀 Welcome to ${G.companyName}! ${G.tagline}. Let's disrupt something.`);
+  addFeed("green", `✅ ${G.employees[0].name} (${G.employees[0].role}) is ready to build.`);
+  addFeed("green", `✅ ${G.employees[1].name} (${G.employees[1].role}) is ready to sell.`);
+  addFeed("amber", `💰 Starting cash: ${fmt(G.cash)}. Don't burn it all on kombucha.`);
+
+  // Main game loop: tick every 100ms, accumulate time
+  if (gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(() => {
+    if (G.paused || G.gameOver) return;
+    const tickMs = 100 * G.speed;
+    tickAccumulator += tickMs;
+    const monthMs = 10000; // 10 seconds = 1 month at 1x
+
+    if (tickAccumulator >= monthMs) {
+      tickAccumulator -= monthMs;
+      monthTick();
+    }
+  }, 100);
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closePanel();
+  if (e.key === " ") { e.preventDefault(); setSpeed(G.paused ? 1 : 0); }
+  if (e.key === "1") setSpeed(1);
+  if (e.key === "2") setSpeed(2);
+  if (e.key === "3") setSpeed(3);
+  if (e.key === "h") togglePanel("hire");
+  if (e.key === "p") togglePanel("product");
+  if (e.key === "f") togglePanel("fundraise");
+  if (e.key === "m") togglePanel("metrics");
+});
+</script>
+</body>
+</html>
